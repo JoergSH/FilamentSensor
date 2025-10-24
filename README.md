@@ -24,12 +24,13 @@ Das Projekt ist in logische Module aufgeteilt:
 ### Core Module
 
 - **[config.h](src/config.h)** / **[config.cpp](src/config.cpp)**
+
   - WiFi-Zugangsdaten
   - Drucker-IP und Port
   - Pin-Definitionen
   - Timeout-Konfigurationen
-
 - **[main.cpp](src/main.cpp)**
+
   - Hauptprogramm
   - Initialisierung aller Module
   - Haupt-Loop-Koordination
@@ -37,15 +38,16 @@ Das Projekt ist in logische Module aufgeteilt:
 ### Netzwerk-Module
 
 - **[wifi_manager.h](src/wifi_manager.h)** / **[wifi_manager.cpp](src/wifi_manager.cpp)**
+
   - WiFi-Verbindungsmanagement
   - Automatische Reconnect-Logik
-
 - **[websocket_client.h](src/websocket_client.h)** / **[websocket_client.cpp](src/websocket_client.cpp)**
+
   - WebSocket-Verbindung zum Drucker
   - Senden von Befehlen
   - Empfangen und Parsen von Status-Updates
-
 - **[web_server.h](src/web_server.h)** / **[web_server.cpp](src/web_server.cpp)**
+
   - HTTP-Webserver (Port 80)
   - REST API-Endpunkte
   - Dashboard-Bereitstellung
@@ -53,15 +55,16 @@ Das Projekt ist in logische Module aufgeteilt:
 ### Drucker-Module
 
 - **[printer_status.h](src/printer_status.h)** / **[printer_status.cpp](src/printer_status.cpp)**
+
   - PrinterStatus-Struktur
   - Status-Anzeige-Funktionen
   - Verwendet printer_status_codes.h
-
 - **[printer_status_codes.h](src/printer_status_codes.h)**
+
   - Status-Code-Definitionen (IDLE, PRINTING, PAUSED, etc.)
   - Status-Text-Konvertierung
-
 - **[printer_control.h](src/printer_control.h)** / **[printer_control.cpp](src/printer_control.cpp)**
+
   - Druckersteuerungsfunktionen
   - startPrint(), pausePrint(), resumePrint(), cancelPrint()
   - toggleLight()
@@ -86,9 +89,11 @@ Das Projekt ist in logische Module aufgeteilt:
 ## API-Endpunkte
 
 ### GET /
+
 Web-Dashboard (HTML-Oberfläche)
 
 ### GET /api/status
+
 Gibt aktuellen Status als JSON zurück:
 
 ```json
@@ -129,9 +134,11 @@ Gibt aktuellen Status als JSON zurück:
 ```
 
 ### POST /api/control
+
 Sendet Steuerungsbefehle:
 
 **Actions:**
+
 - `pause` - Druck pausieren
 - `resume` - Druck fortsetzen
 - `cancel` - Druck abbrechen
@@ -141,6 +148,7 @@ Sendet Steuerungsbefehle:
 - `setPauseDelay` - Pause-Verzögerung setzen
 
 **Beispiel:**
+
 ```json
 {
   "action": "pause"
@@ -149,28 +157,17 @@ Sendet Steuerungsbefehle:
 
 ## Konfiguration
 
-Passen Sie die Werte in [config.h](src/config.h) an:
+Beim ersten Start verbinden Sie sich mit dem ESP
 
-```cpp
-// WiFi
-const char* WIFI_SSID = "IhrWiFi";
-const char* WIFI_PASSWORD = "IhrPasswort";
+Im Browser die Centauri-Monitor-Setup'  Seite aufrufen (http://192.168.4.1)
 
-// Drucker
-const char* PRINTER_IP = "192.168.1.100";
-const int PRINTER_PORT = 80;
+DIe Daten ihres Routers eingeben
 
-// Sensor-Pins (ESP32-C3)
-#define SENSOR_SWITCH 1  // Filament-Präsenz
-#define SENSOR_MOTION 0  // Filament-Bewegung
-
-// Timeouts
-#define MOTION_TIMEOUT 3000  // 3 Sekunden ohne Bewegung = Fehler
-```
+Die IP des Druckers im Netzwerk eingeben.
 
 ## Installation
 
-1. PlatformIO installieren
+1. VB Code und PlatformIO installieren
 2. Repository klonen
 3. `config.h` anpassen
 4. Kompilieren und hochladen:
@@ -188,13 +185,13 @@ Nach dem Start und erfolgreicher WiFi-Verbindung:
 
 ## Status-Codes
 
-| Code | Status | Beschreibung |
-|------|--------|--------------|
-| 0 | IDLE | Drucker bereit |
-| 1 | HOMING | Achsen werden referenziert |
-| 6 | PAUSED | Druck pausiert |
-| 11 | PRINTING | Druck läuft |
-| 9 | COMPLETE | Druck abgeschlossen |
+| Code | Status   | Beschreibung               |
+| ---- | -------- | -------------------------- |
+| 0    | IDLE     | Drucker bereit             |
+| 1    | HOMING   | Achsen werden referenziert |
+| 6    | PAUSED   | Druck pausiert             |
+| 11   | PRINTING | Druck läuft               |
+| 9    | COMPLETE | Druck abgeschlossen        |
 
 Vollständige Liste in [printer_status_codes.h](src/printer_status_codes.h)
 
@@ -207,16 +204,10 @@ Vollständige Liste in [printer_status_codes.h](src/printer_status_codes.h)
 
 ## Entwicklung
 
-### Neues Feature hinzufügen
-
-1. Erstellen Sie ein neues Modul (z.B. `feature.h` / `feature.cpp`)
-2. Implementieren Sie die Funktionalität
-3. Inkludieren Sie in `main.cpp`
-4. Initialisieren Sie in `setup()`
-
 ### Debug-Ausgaben
 
 Alle Module nutzen den Serial Monitor (115200 baud):
+
 - `[WS]` - WebSocket-Events
 - `[SENSOR]` - Filament-Sensor-Events
 - `[WEB]` - Webserver-Events
