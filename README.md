@@ -2,6 +2,8 @@
 
 ESP32-basierte Überwachungslösung für den Elegoo Centauri Carbon 3D-Drucker mit Filament-Sensor und Web-Dashboard.
 
+Getestet mit der Aktuellen Firmware 1.1.46
+
 ## Features
 
 - ✅ **Echtzeit-Druckerüberwachung** via WebSocket
@@ -14,6 +16,7 @@ ESP32-basierte Überwachungslösung für den Elegoo Centauri Carbon 3D-Drucker m
 ## Hardware
 
 - **ESP32-C3 Super Mini** (oder kompatibel)
+- BIGTREETECH Smart Filament Sensor Filament V2.0 oder kompatibel
 - **Filament Switch Sensor** (Pin 1) - Erkennt Filament-Präsenz
 - **Filament Motion Sensor** (Pin 0) - Erkennt Filament-Bewegung
 
@@ -25,8 +28,6 @@ Das Projekt ist in logische Module aufgeteilt:
 
 - **[config.h](src/config.h)** / **[config.cpp](src/config.cpp)**
 
-  - WiFi-Zugangsdaten
-  - Drucker-IP und Port
   - Pin-Definitionen
   - Timeout-Konfigurationen
 - **[main.cpp](src/main.cpp)**
