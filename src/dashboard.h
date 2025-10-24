@@ -391,10 +391,97 @@ const char* getDashboardHTML() {
                onchange="setPauseDelay(this.value)">
       </div>
     </div>
-    
+
+    <!-- Settings Section -->
+    <div class="sensor-settings" style="margin-top: 20px;">
+      <h3>⚙️ Einstellungen</h3>
+
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px;">WiFi SSID:</label>
+        <input type="text" id="wifiSSID" placeholder="SSID"
+               style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #fff;">
+      </div>
+
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px;">WiFi Passwort:</label>
+        <input type="password" id="wifiPassword" placeholder="Passwort"
+               style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #fff;">
+      </div>
+
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px;">Drucker IP-Adresse:</label>
+        <input type="text" id="printerIP" placeholder="192.168.1.100"
+               style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #fff;">
+      </div>
+
+      <div style="margin-bottom: 15px;">
+        <label style="display: block; margin-bottom: 5px;">Drucker Port:</label>
+        <input type="number" id="printerPort" placeholder="80" value="80"
+               style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #fff;">
+      </div>
+
+      <div class="controls">
+        <button class="btn btn-resume" onclick="saveSettings()">
+          💾 Einstellungen speichern
+        </button>
+        <button class="btn btn-pause" onclick="loadSettings()">
+          🔄 Aktuelle laden
+        </button>
+      </div>
+
+      <div id="settingsStatus" style="margin-top: 10px; text-align: center; font-weight: bold;"></div>
+    </div>
+
+    <!-- OTA Update Section -->
+    <div class="sensor-settings" style="margin-top: 20px;">
+      <h3>🔄 Firmware Update (OTA)</h3>
+      <div class="info-row">
+        <span class="info-label">Aktuelle Partition:</span>
+        <span class="info-value" id="currentPartition">-</span>
+      </div>
+      <div class="info-row">
+        <span class="info-label">Nächste Partition:</span>
+        <span class="info-value" id="nextPartition">-</span>
+      </div>
+
+      <div style="margin-top: 15px;">
+        <input type="file" id="firmwareFile" accept=".bin" style="display: none;" onchange="uploadFirmware()">
+        <button class="btn btn-resume" onclick="document.getElementById('firmwareFile').click()">
+          📁 Firmware auswählen
+        </button>
+        <button class="btn btn-pause" onclick="checkOTAStatus()" style="margin-left: 10px;">
+          📊 Status prüfen
+        </button>
+      </div>
+
+      <div id="otaProgress" style="display: none; margin-top: 15px;">
+        <div style="background: rgba(255,255,255,0.2); border-radius: 10px; overflow: hidden; height: 30px;">
+          <div id="otaProgressBar" style="background: #4CAF50; height: 100%; width: 0%; transition: width 0.3s; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+            0%
+          </div>
+        </div>
+        <div id="otaStatus" style="margin-top: 10px; text-align: center;">Warte auf Upload...</div>
+      </div>
+    </div>
+
+    <!-- Camera Stream Section -->
+    <div class="sensor-settings" style="margin-top: 20px;">
+      <h3>📷 Drucker-Kamera</h3>
+      <div style="border-radius: 10px; overflow: hidden; background: rgba(0,0,0,0.3);">
+        <img id="cameraStream" src="" alt="Kamera lädt..."
+             style="width: 100%; height: auto; display: block;"
+             onerror="this.alt='Kamera nicht erreichbar'">
+      </div>
+      <div style="margin-top: 10px; text-align: center;">
+        <button class="btn btn-resume" onclick="reloadCamera()">
+          🔄 Kamera neu laden
+        </button>
+      </div>
+    </div>
+
     <div class="update-time" id="updateTime">Warte auf Daten...</div>
   </div>
-  
+
   <script>
     let updateInterval;
     
@@ -511,7 +598,215 @@ const char* getDashboardHTML() {
       document.getElementById('fanAux').textContent = data.fans.aux + '%';
       document.getElementById('fanBox').textContent = data.fans.box + '%';
     }
-    
+
+    async function checkOTAStatus() {
+      try {
+        const response = await fetch('/api/ota/status');
+        const data = await response.json();
+
+        document.getElementById('currentPartition').textContent = data.currentPartition;
+        document.getElementById('nextPartition').textContent = data.nextPartition;
+
+        alert('OTA Status:\nAktuell: ' + data.currentPartition +
+              '\nNächste: ' + data.nextPartition +
+              '\nFortschritt: ' + data.progress + '%' +
+              (data.error ? '\nFehler: ' + data.error : ''));
+      } catch (error) {
+        console.error('OTA Status Fehler:', error);
+        alert('Fehler beim Abrufen des OTA Status');
+      }
+    }
+
+    async function uploadFirmware() {
+      const fileInput = document.getElementById('firmwareFile');
+      const file = fileInput.files[0];
+
+      if (!file) {
+        return;
+      }
+
+      if (!file.name.endsWith('.bin')) {
+        alert('Bitte nur .bin Dateien auswählen!');
+        return;
+      }
+
+      if (!confirm('Firmware "' + file.name + '" hochladen?\n\nDer ESP32 wird nach erfolgreichem Upload neu gestartet.')) {
+        fileInput.value = '';
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('firmware', file);
+
+      const progressDiv = document.getElementById('otaProgress');
+      const progressBar = document.getElementById('otaProgressBar');
+      const statusDiv = document.getElementById('otaStatus');
+
+      progressDiv.style.display = 'block';
+      progressBar.style.width = '0%';
+      progressBar.textContent = '0%';
+      statusDiv.textContent = 'Upload läuft...';
+
+      try {
+        const xhr = new XMLHttpRequest();
+
+        xhr.upload.addEventListener('progress', (e) => {
+          if (e.lengthComputable) {
+            const percentComplete = Math.round((e.loaded / e.total) * 100);
+            progressBar.style.width = percentComplete + '%';
+            progressBar.textContent = percentComplete + '%';
+          }
+        });
+
+        xhr.addEventListener('load', () => {
+          if (xhr.status === 200) {
+            const response = JSON.parse(xhr.responseText);
+            progressBar.style.width = '100%';
+            progressBar.textContent = '100%';
+            statusDiv.textContent = response.message || 'Upload erfolgreich! Neustart...';
+            progressBar.style.background = '#4CAF50';
+
+            setTimeout(() => {
+              alert('Firmware erfolgreich aktualisiert!\n\nDer ESP32 startet jetzt neu.\nBitte warten Sie ca. 10 Sekunden und laden Sie die Seite neu.');
+            }, 1000);
+          } else {
+            const response = JSON.parse(xhr.responseText);
+            statusDiv.textContent = 'Fehler: ' + (response.message || 'Upload fehlgeschlagen');
+            progressBar.style.background = '#dc3545';
+            alert('Upload fehlgeschlagen: ' + (response.message || 'Unbekannter Fehler'));
+          }
+          fileInput.value = '';
+        });
+
+        xhr.addEventListener('error', () => {
+          statusDiv.textContent = 'Upload fehlgeschlagen';
+          progressBar.style.background = '#dc3545';
+          alert('Upload fehlgeschlagen: Netzwerkfehler');
+          fileInput.value = '';
+        });
+
+        xhr.open('POST', '/api/ota/upload');
+        xhr.send(formData);
+
+      } catch (error) {
+        console.error('Upload Fehler:', error);
+        statusDiv.textContent = 'Fehler: ' + error.message;
+        progressBar.style.background = '#dc3545';
+        alert('Upload fehlgeschlagen: ' + error.message);
+        fileInput.value = '';
+      }
+    }
+
+    async function loadSettings() {
+      try {
+        const response = await fetch('/api/config');
+        const data = await response.json();
+
+        document.getElementById('wifiSSID').value = data.wifiSSID || '';
+        document.getElementById('printerIP').value = data.printerIP || '';
+        document.getElementById('printerPort').value = data.printerPort || 80;
+
+        // Update camera URL based on printer IP
+        updateCameraURL(data.printerIP);
+
+        const statusDiv = document.getElementById('settingsStatus');
+        statusDiv.textContent = '✅ Einstellungen geladen';
+        statusDiv.style.color = '#4CAF50';
+        setTimeout(() => { statusDiv.textContent = ''; }, 3000);
+      } catch (error) {
+        console.error('Fehler beim Laden der Einstellungen:', error);
+        const statusDiv = document.getElementById('settingsStatus');
+        statusDiv.textContent = '❌ Fehler beim Laden';
+        statusDiv.style.color = '#dc3545';
+      }
+    }
+
+    async function saveSettings() {
+      const wifiSSID = document.getElementById('wifiSSID').value;
+      const wifiPassword = document.getElementById('wifiPassword').value;
+      const printerIP = document.getElementById('printerIP').value;
+      const printerPort = parseInt(document.getElementById('printerPort').value) || 80;
+
+      if (!printerIP) {
+        alert('Bitte mindestens eine Drucker-IP eingeben!');
+        return;
+      }
+
+      // Validate IP format
+      const ipPattern = /^(\d{1,3}\.){3}\d{1,3}$/;
+      if (!ipPattern.test(printerIP)) {
+        alert('Ungültige IP-Adresse!');
+        return;
+      }
+
+      const config = {
+        printerIP: printerIP,
+        printerPort: printerPort
+      };
+
+      // Only include WiFi if both SSID and password are provided
+      if (wifiSSID && wifiPassword) {
+        config.wifiSSID = wifiSSID;
+        config.wifiPassword = wifiPassword;
+      }
+
+      try {
+        const response = await fetch('/api/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(config)
+        });
+
+        const result = await response.json();
+        const statusDiv = document.getElementById('settingsStatus');
+
+        if (result.success) {
+          statusDiv.textContent = '✅ ' + result.message;
+          statusDiv.style.color = '#4CAF50';
+
+          // Update camera URL
+          updateCameraURL(printerIP);
+
+          if (result.needsRestart) {
+            if (confirm('Einstellungen gespeichert!\n\nFür WiFi-Änderungen ist ein Neustart erforderlich.\nJetzt neu starten?')) {
+              await fetch('/api/control', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ action: 'restart' })
+              });
+              alert('ESP32 wird neu gestartet...\nBitte warten Sie 10 Sekunden.');
+            }
+          }
+        } else {
+          statusDiv.textContent = '❌ ' + result.message;
+          statusDiv.style.color = '#dc3545';
+        }
+
+        setTimeout(() => { statusDiv.textContent = ''; }, 5000);
+      } catch (error) {
+        console.error('Fehler beim Speichern:', error);
+        const statusDiv = document.getElementById('settingsStatus');
+        statusDiv.textContent = '❌ Fehler beim Speichern';
+        statusDiv.style.color = '#dc3545';
+      }
+    }
+
+    function updateCameraURL(printerIP) {
+      if (printerIP) {
+        const cameraURL = 'http://' + printerIP + ':3031/video';
+        document.getElementById('cameraStream').src = cameraURL;
+      }
+    }
+
+    function reloadCamera() {
+      const img = document.getElementById('cameraStream');
+      const currentSrc = img.src;
+      img.src = '';
+      setTimeout(() => {
+        img.src = currentSrc + '?t=' + new Date().getTime();
+      }, 100);
+    }
+
     async function sendControl(action, data = {}) {
       try {
         const response = await fetch('/api/control', {
@@ -537,6 +832,7 @@ const char* getDashboardHTML() {
     
     // Start updates
     fetchStatus();
+    loadSettings();  // Load settings on page load
     updateInterval = setInterval(fetchStatus, 500);
   </script>
 </body>

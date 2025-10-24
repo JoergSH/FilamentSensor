@@ -14,6 +14,7 @@
 #include "printer_status.h"
 #include "printer_control.h"
 #include "filament_sensor.h"
+#include "ota_update.h"
 
 // Timing variables
 unsigned long lastStatusRequest = 0;
@@ -31,6 +32,9 @@ void setup() {
 
   // Initialize configuration manager
   initConfigManager();
+
+  // Initialize OTA update system
+  setupOTA();
 
   // Initialize filament sensor
   setupFilamentSensor();
