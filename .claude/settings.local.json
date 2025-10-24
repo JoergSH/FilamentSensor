@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//c/Users/joerg/Documents/PlatformIO/Projects/esp32-ota-test/**)",
+      "Bash(pio run:*)",
+      "Bash(\"C:\\Users\\joerg\\.platformio\\penv\\Scripts\\platformio.exe\" run -e nologo_esp32c3_super_mini)",
+      "Bash(Select-Object -Last 50)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
