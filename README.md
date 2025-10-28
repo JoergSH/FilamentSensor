@@ -4,6 +4,9 @@ ESP32-basierte Überwachungslösung für den Elegoo Centauri Carbon 3D-Drucker m
 
 Getestet mit der Aktuellen Firmware 1.1.46
 
+![1761655599698](image/README/1761655599698.png)
+
+
 ## Features
 
 - ✅ **Echtzeit-Druckerüberwachung** via WebSocket
