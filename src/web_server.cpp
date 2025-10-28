@@ -7,6 +7,7 @@
 #include "config_manager.h"
 #include "setup_portal.h"
 #include "dashboard.h"
+#include "settings.h"
 #include "printer_status.h"
 #include "printer_status_codes.h"
 #include "printer_control.h"
@@ -32,6 +33,11 @@ void setupWebServer() {
   // Setup portal page (accessible anytime)
   webServer.on("/setup", HTTP_GET, [](AsyncWebServerRequest *request) {
     request->send(200, "text/html", getSetupPortalHTML());
+  });
+
+  // Settings page
+  webServer.on("/settings", HTTP_GET, [](AsyncWebServerRequest *request) {
+    request->send(200, "text/html", getSettingsHTML());
   });
 
   // API: Handle initial setup
@@ -229,6 +235,41 @@ void setupWebServer() {
       request->send(200, "application/json", output);
     }
   );
+
+  // API: Set runout pin output state
+  webServer.on("/api/test/runout/set", HTTP_GET, [](AsyncWebServerRequest *request) {
+    JsonDocument doc;
+
+    if (request->hasParam("state")) {
+      String stateStr = request->getParam("state")->value();
+      bool state = (stateStr == "1" || stateStr == "true" || stateStr == "HIGH");
+
+      setRunoutPinOutput(state);
+
+      doc["success"] = true;
+      doc["message"] = state ? "Pin set to HIGH" : "Pin set to LOW";
+    } else {
+      doc["success"] = false;
+      doc["message"] = "Missing 'state' parameter";
+    }
+
+    String output;
+    serializeJson(doc, output);
+    request->send(200, "application/json", output);
+  });
+
+  // API: Read runout pin state
+  webServer.on("/api/test/runout/read", HTTP_GET, [](AsyncWebServerRequest *request) {
+    JsonDocument doc;
+
+    String stateResult = getRunoutPinState();
+    doc["success"] = true;
+    doc["result"] = stateResult;
+
+    String output;
+    serializeJson(doc, output);
+    request->send(200, "application/json", output);
+  });
 
   // API: Get OTA status
   webServer.on("/api/ota/status", HTTP_GET, [](AsyncWebServerRequest *request) {

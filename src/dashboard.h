@@ -21,7 +21,7 @@ const char* getDashboardHTML() {
     }
     
     .container {
-      max-width: 1200px;
+      max-width: 1800px;
       margin: 0 auto;
     }
     
@@ -47,9 +47,15 @@ const char* getDashboardHTML() {
     
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
       gap: 20px;
       margin-bottom: 20px;
+    }
+
+    @media (min-width: 1400px) {
+      .grid {
+        grid-template-columns: repeat(4, 1fr);
+      }
     }
     
     .card {
@@ -96,25 +102,25 @@ const char* getDashboardHTML() {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: 12px;
-      margin: 10px 0;
+      padding: 8px 10px;
+      margin: 6px 0;
       background: rgba(0,0,0,0.2);
-      border-radius: 10px;
+      border-radius: 8px;
     }
-    
+
     .temp-label {
       font-weight: bold;
-      font-size: 0.9em;
+      font-size: 0.85em;
       opacity: 0.8;
     }
-    
+
     .temp-value {
-      font-size: 1.8em;
+      font-size: 1.4em;
       font-weight: bold;
     }
-    
+
     .temp-target {
-      font-size: 1em;
+      font-size: 0.85em;
       opacity: 0.7;
     }
     
@@ -257,7 +263,13 @@ const char* getDashboardHTML() {
       <h1>🖨️ Centauri Carbon Monitor</h1>
       <p class="subtitle">Echtzeit-Überwachung & Steuerung</p>
     </header>
-    
+
+    <div style="margin-bottom: 20px; text-align: center;">
+      <button class="btn btn-light" onclick="window.location.href='/settings'" style="width: 100%; max-width: 400px;">
+        ⚙️ Einstellungen & OTA Update
+      </button>
+    </div>
+
     <div class="grid">
       <!-- Status Card -->
       <div class="card">
@@ -369,98 +381,26 @@ const char* getDashboardHTML() {
           <button class="btn btn-light" onclick="sendControl('toggleLight')">💡 Licht</button>
         </div>
       </div>
-    </div>
-    
-    <!-- Filament Sensor Settings -->
-    <div class="sensor-settings">
-      <h3>⚙️ Filament-Sensor Einstellungen</h3>
-      <div class="controls">
-        <button class="btn btn-toggle" onclick="toggleAutoPause()" id="autoPauseBtn">
-          Auto-Pause: EIN
-        </button>
-        <button class="btn btn-resume" onclick="clearError()" id="clearErrorBtn">
-          Fehler zurücksetzen
-        </button>
-      </div>
-      
-      <div style="margin-top: 15px;">
-        <label>Verzögerung vor Pause: <span id="delayValue" class="delay-value">2000ms</span></label>
-        <input type="range" min="500" max="10000" value="2000" step="100" 
-               class="delay-slider" id="pauseDelay" 
-               oninput="updateDelayValue(this.value)"
-               onchange="setPauseDelay(this.value)">
-      </div>
-    </div>
 
-    <!-- Settings Section -->
-    <div class="sensor-settings" style="margin-top: 20px;">
-      <h3>⚙️ Einstellungen</h3>
-
-      <div style="margin-bottom: 15px;">
-        <label style="display: block; margin-bottom: 5px;">WiFi SSID:</label>
-        <input type="text" id="wifiSSID" placeholder="SSID"
-               style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #fff;">
-      </div>
-
-      <div style="margin-bottom: 15px;">
-        <label style="display: block; margin-bottom: 5px;">WiFi Passwort:</label>
-        <input type="password" id="wifiPassword" placeholder="Passwort"
-               style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #fff;">
-      </div>
-
-      <div style="margin-bottom: 15px;">
-        <label style="display: block; margin-bottom: 5px;">Drucker IP-Adresse:</label>
-        <input type="text" id="printerIP" placeholder="192.168.1.100"
-               style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #fff;">
-      </div>
-
-      <div style="margin-bottom: 15px;">
-        <label style="display: block; margin-bottom: 5px;">Drucker Port:</label>
-        <input type="number" id="printerPort" placeholder="80" value="80"
-               style="width: 100%; padding: 10px; border-radius: 5px; border: 1px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: #fff;">
-      </div>
-
-      <div class="controls">
-        <button class="btn btn-resume" onclick="saveSettings()">
-          💾 Einstellungen speichern
-        </button>
-        <button class="btn btn-pause" onclick="loadSettings()">
-          🔄 Aktuelle laden
-        </button>
-      </div>
-
-      <div id="settingsStatus" style="margin-top: 10px; text-align: center; font-weight: bold;"></div>
-    </div>
-
-    <!-- OTA Update Section -->
-    <div class="sensor-settings" style="margin-top: 20px;">
-      <h3>🔄 Firmware Update (OTA)</h3>
-      <div class="info-row">
-        <span class="info-label">Aktuelle Partition:</span>
-        <span class="info-value" id="currentPartition">-</span>
-      </div>
-      <div class="info-row">
-        <span class="info-label">Nächste Partition:</span>
-        <span class="info-value" id="nextPartition">-</span>
-      </div>
-
-      <div style="margin-top: 15px;">
-        <input type="file" id="firmwareFile" accept=".bin" style="display: none;" onchange="uploadFirmware()">
-        <button class="btn btn-resume" onclick="document.getElementById('firmwareFile').click()">
-          📁 Firmware auswählen
-        </button>
-        <button class="btn btn-pause" onclick="checkOTAStatus()" style="margin-left: 10px;">
-          📊 Status prüfen
-        </button>
-      </div>
-
-      <div id="otaProgress" style="display: none; margin-top: 15px;">
-        <div style="background: rgba(255,255,255,0.2); border-radius: 10px; overflow: hidden; height: 30px;">
-          <div id="otaProgressBar" style="background: #4CAF50; height: 100%; width: 0%; transition: width 0.3s; display: flex; align-items: center; justify-content: center; font-weight: bold;">
-            0%
-          </div>
+      <!-- Filament Sensor Settings -->
+      <div class="card">
+        <h2>⚙️ Filament-Sensor</h2>
+        <div class="controls">
+          <button class="btn btn-toggle" onclick="toggleAutoPause()" id="autoPauseBtn">
+            Auto-Pause: EIN
+          </button>
+          <button class="btn btn-resume" onclick="clearError()" id="clearErrorBtn">
+            Fehler zurücksetzen
+          </button>
         </div>
-        <div id="otaStatus" style="margin-top: 10px; text-align: center;">Warte auf Upload...</div>
+
+        <div style="margin-top: 15px;">
+          <label>Verzögerung vor Pause: <span id="delayValue" class="delay-value">2000ms</span></label>
+          <input type="range" min="500" max="10000" value="2000" step="100"
+                 class="delay-slider" id="pauseDelay"
+                 oninput="updateDelayValue(this.value)"
+                 onchange="setPauseDelay(this.value)">
+        </div>
       </div>
     </div>
 
@@ -697,104 +637,18 @@ const char* getDashboardHTML() {
       }
     }
 
-    async function loadSettings() {
+    async function loadCameraURL() {
       try {
         const response = await fetch('/api/config');
         const data = await response.json();
 
-        document.getElementById('wifiSSID').value = data.wifiSSID || '';
-        document.getElementById('printerIP').value = data.printerIP || '';
-        document.getElementById('printerPort').value = data.printerPort || 80;
-
         // Update camera URL based on printer IP
-        updateCameraURL(data.printerIP);
-
-        const statusDiv = document.getElementById('settingsStatus');
-        statusDiv.textContent = '✅ Einstellungen geladen';
-        statusDiv.style.color = '#4CAF50';
-        setTimeout(() => { statusDiv.textContent = ''; }, 3000);
-      } catch (error) {
-        console.error('Fehler beim Laden der Einstellungen:', error);
-        const statusDiv = document.getElementById('settingsStatus');
-        statusDiv.textContent = '❌ Fehler beim Laden';
-        statusDiv.style.color = '#dc3545';
-      }
-    }
-
-    async function saveSettings() {
-      const wifiSSID = document.getElementById('wifiSSID').value;
-      const wifiPassword = document.getElementById('wifiPassword').value;
-      const printerIP = document.getElementById('printerIP').value;
-      const printerPort = parseInt(document.getElementById('printerPort').value) || 80;
-
-      if (!printerIP) {
-        alert('Bitte mindestens eine Drucker-IP eingeben!');
-        return;
-      }
-
-      // Validate IP format
-      const ipPattern = /^(\d{1,3}\.){3}\d{1,3}$/;
-      if (!ipPattern.test(printerIP)) {
-        alert('Ungültige IP-Adresse!');
-        return;
-      }
-
-      const config = {
-        printerIP: printerIP,
-        printerPort: printerPort
-      };
-
-      // Only include WiFi if both SSID and password are provided
-      if (wifiSSID && wifiPassword) {
-        config.wifiSSID = wifiSSID;
-        config.wifiPassword = wifiPassword;
-      }
-
-      try {
-        const response = await fetch('/api/config', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(config)
-        });
-
-        const result = await response.json();
-        const statusDiv = document.getElementById('settingsStatus');
-
-        if (result.success) {
-          statusDiv.textContent = '✅ ' + result.message;
-          statusDiv.style.color = '#4CAF50';
-
-          // Update camera URL
-          updateCameraURL(printerIP);
-
-          if (result.needsRestart) {
-            if (confirm('Einstellungen gespeichert!\n\nFür WiFi-Änderungen ist ein Neustart erforderlich.\nJetzt neu starten?')) {
-              await fetch('/api/control', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ action: 'restart' })
-              });
-              alert('ESP32 wird neu gestartet...\nBitte warten Sie 10 Sekunden.');
-            }
-          }
-        } else {
-          statusDiv.textContent = '❌ ' + result.message;
-          statusDiv.style.color = '#dc3545';
+        if (data.printerIP) {
+          const cameraURL = 'http://' + data.printerIP + ':3031/video';
+          document.getElementById('cameraStream').src = cameraURL;
         }
-
-        setTimeout(() => { statusDiv.textContent = ''; }, 5000);
       } catch (error) {
-        console.error('Fehler beim Speichern:', error);
-        const statusDiv = document.getElementById('settingsStatus');
-        statusDiv.textContent = '❌ Fehler beim Speichern';
-        statusDiv.style.color = '#dc3545';
-      }
-    }
-
-    function updateCameraURL(printerIP) {
-      if (printerIP) {
-        const cameraURL = 'http://' + printerIP + ':3031/video';
-        document.getElementById('cameraStream').src = cameraURL;
+        console.error('Fehler beim Laden der Kamera-URL:', error);
       }
     }
 
@@ -832,7 +686,7 @@ const char* getDashboardHTML() {
     
     // Start updates
     fetchStatus();
-    loadSettings();  // Load settings on page load
+    loadCameraURL();  // Load camera URL from config
     updateInterval = setInterval(fetchStatus, 500);
   </script>
 </body>

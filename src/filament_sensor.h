@@ -47,4 +47,10 @@ unsigned long getLastMotionPulse();
 unsigned int getMotionPulseCount();
 bool getAutoPauseEnabled();
 
+// Set runout pin output state (for testing/control)
+void setRunoutPinOutput(bool state);
+
+// Get current runout pin state
+String getRunoutPinState();
+
 #endif // FILAMENT_SENSOR_H

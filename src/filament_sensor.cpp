@@ -58,11 +58,15 @@ void setupFilamentSensor() {
   pinMode(SENSOR_SWITCH, INPUT_PULLDOWN);
   pinMode(SENSOR_MOTION, INPUT_PULLUP);
 
+  // Initialize runout output pin (INPUT = floating/HIGH via printer pull-up)
+  pinMode(RUNOUT_PIN, INPUT);  // Default to HIGH (no error) via printer's pull-up
+
   // Attach interrupt for motion detection
   attachInterrupt(digitalPinToInterrupt(SENSOR_MOTION), filamentMotionISR, FALLING);
 
   Serial.println("[SENSOR] Filament sensor initialized");
-  Serial.printf("[SENSOR] Switch Pin: %d, Motion Pin: %d\n", SENSOR_SWITCH, SENSOR_MOTION);
+  Serial.printf("[SENSOR] Switch Pin: %d, Motion Pin: %d, Runout Output: %d\n",
+                SENSOR_SWITCH, SENSOR_MOTION, RUNOUT_PIN);
 }
 
 void IRAM_ATTR filamentMotionISR() {
@@ -73,7 +77,11 @@ void IRAM_ATTR filamentMotionISR() {
 void checkFilamentSensor() {
   unsigned long now = millis();
 
-  // Only check when actively printing
+  // ALWAYS forward SENSOR_SWITCH state to RUNOUT_PIN (regardless of print status or auto-pause)
+  bool filamentPresent = digitalRead(SENSOR_SWITCH) == HIGH;  // HIGH = present
+  setRunoutPinOutput(filamentPresent);  // Pass through: HIGH if present, LOW if absent
+
+  // Only check for auto-pause when actively printing
   if (printerStatus.printStatus != SDCP_PRINT_STATUS_PRINTING &&
       printerStatus.printStatus != SDCP_PRINT_STATUS_PRINTING_ALT &&
       printerStatus.printStatus != SDCP_PRINT_STATUS_PRINTING_RESUME) {
@@ -83,8 +91,6 @@ void checkFilamentSensor() {
   }
 
   // PRIORITY 1: Check if filament switch detects no filament (IMMEDIATE)
-  bool filamentPresent = digitalRead(SENSOR_SWITCH) == HIGH;  // HIGH = present
-
   if (!filamentPresent && !filamentErrorDetected) {
     Serial.println("\n[SENSOR] ⚠️  FILAMENT RUNOUT DETECTED!");
     filamentErrorDetected = true;
@@ -211,4 +217,29 @@ void setMotionTimeout(unsigned long timeout) {
 
 unsigned long getMotionTimeout() {
   return motionTimeout;
+}
+
+void setRunoutPinOutput(bool state) {
+  if (state) {
+    // HIGH = Release pin (floating/high-impedance, pull-up on printer pulls to HIGH)
+    pinMode(RUNOUT_PIN, INPUT);
+    Serial.println("[RUNOUT OUTPUT] Pin IO2 released (floating -> HIGH via pull-up)");
+  } else {
+    // LOW = Pull to ground (open-drain style)
+    pinMode(RUNOUT_PIN, OUTPUT);
+    digitalWrite(RUNOUT_PIN, LOW);
+    Serial.println("[RUNOUT OUTPUT] Pin IO2 pulled to GND (LOW)");
+  }
+}
+
+String getRunoutPinState() {
+  // Read current output state
+  int currentState = digitalRead(RUNOUT_PIN);
+
+  String result = "Pin IO2: ";
+  result += (currentState == HIGH) ? "HIGH (1)" : "LOW (0)";
+
+  Serial.printf("[RUNOUT STATE] %s\n", result.c_str());
+
+  return result;
 }

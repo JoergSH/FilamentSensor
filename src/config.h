@@ -16,8 +16,9 @@ extern const int PRINTER_PORT;
 extern const char* PRINTER_WS_PATH;
 
 // ========== Filament Sensor Pin Definitions ==========
-#define SENSOR_SWITCH 1  // On/Off - Filament present detection
-#define SENSOR_MOTION 0  // Motion detection - Filament movement
+#define SENSOR_SWITCH 1   // On/Off - Filament present detection
+#define SENSOR_MOTION 0   // Motion detection - Filament movement
+#define RUNOUT_PIN 2      // Printer's runout sensor pin (safe GPIO, not SPI)
 
 // ========== Filament Sensor Configuration ==========
 #define MOTION_TIMEOUT 3000        // 3 seconds without motion = jam/runout
