@@ -6,7 +6,6 @@ Getestet mit der Aktuellen Firmware 1.1.46
 
 ![1761655599698](image/README/1761655599698.png)
 
-
 ## Features
 
 - ✅ **Echtzeit-Druckerüberwachung** via WebSocket
@@ -19,9 +18,10 @@ Getestet mit der Aktuellen Firmware 1.1.46
 ## Hardware
 
 - **ESP32-C3 Super Mini** (oder kompatibel)
-- BIGTREETECH Smart Filament Sensor Filament V2.0 oder kompatibel
+- BIGTREETECH Smart Filament Sensor V2.0 oder kompatibel
 - **Filament Switch Sensor** (Pin 1) - Erkennt Filament-Präsenz
 - **Filament Motion Sensor** (Pin 0) - Erkennt Filament-Bewegung
+- **Filament Switch** **Output** zum Drucker
 
 ## Modulare Architektur
 
