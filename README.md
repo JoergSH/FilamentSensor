@@ -4,9 +4,9 @@ ESP32-basierte Überwachungslösung für den Elegoo Centauri Carbon 3D-Drucker m
 
 Getestet mit der Aktuellen Firmware 1.1.46
 
-![1761655599698](image/README/1761655599698.png)
+![1763063078600](image/README/1763063078600.png)
 
-## Features
+Features
 
 - ✅ **Echtzeit-Druckerüberwachung** via WebSocket
 - ✅ **Filament-Runout-Detektion** (Sensor erkennt fehlendes Filament)
@@ -243,14 +243,15 @@ Im Dashboard unter "Filament-Sensor":
 Die einfachste Methode ist das Flashen der vorkompilierten Firmware:
 
 1. **Firmware herunterladen**
+
    - Alle Dateien aus dem `firmware/` Ordner herunterladen
    - Oder als ZIP: [firmware.zip](firmware/)
-
 2. **ESP Web Flasher verwenden**
+
    - Detaillierte Anleitung: [firmware/FLASH_INSTRUCTIONS.md](firmware/FLASH_INSTRUCTIONS.md)
    - Online-Tool: [https://espressif.github.io/esptool-js/](https://espressif.github.io/esptool-js/)
-
 3. **Dateien flashen** (mit angegebenen Adressen):
+
    - `bootloader.bin` → 0x0
    - `partitions.bin` → 0x8000
    - `firmware.bin` → 0x10000
