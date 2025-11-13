@@ -162,6 +162,7 @@ void setupWebServer() {
     sensor["pulseCount"] = getMotionPulseCount();
     sensor["autoPause"] = getAutoPauseEnabled();
     sensor["pauseDelay"] = getMotionTimeout();
+    sensor["switchDirectMode"] = getSwitchDirectMode();
 
     // Check filament present (HIGH = present on this sensor)
     bool filamentPresent = digitalRead(SENSOR_SWITCH) == HIGH;
@@ -210,6 +211,10 @@ void setupWebServer() {
       else if (action == "clearError") {
         resetFilamentSensor();
         response["message"] = "Sensor error cleared";
+      }
+      else if (action == "toggleSwitchMode") {
+        toggleSwitchMode();
+        response["message"] = getSwitchDirectMode() ? "Switch mode: Direct" : "Switch mode: Pause Command";
       }
       else if (action == "setPauseDelay") {
         unsigned long delay = doc["delay"] | getMotionTimeout();

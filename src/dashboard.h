@@ -389,6 +389,9 @@ const char* getDashboardHTML() {
           <button class="btn btn-toggle" onclick="toggleAutoPause()" id="autoPauseBtn">
             Auto-Pause: EIN
           </button>
+          <button class="btn btn-toggle" onclick="toggleSwitchMode()" id="switchModeBtn">
+            Mode: Direct
+          </button>
           <button class="btn btn-resume" onclick="clearError()" id="clearErrorBtn">
             Fehler zurücksetzen
           </button>
@@ -445,7 +448,11 @@ const char* getDashboardHTML() {
     async function clearError() {
       await sendControl('clearError');
     }
-    
+
+    async function toggleSwitchMode() {
+      await sendControl('toggleSwitchMode');
+    }
+
     function updateDelayValue(value) {
       document.getElementById('delayValue').textContent = value + 'ms';
     }
@@ -483,11 +490,15 @@ const char* getDashboardHTML() {
       // Filament Sensor Status - VERBESSERT
       const sensorStatusDiv = document.getElementById('sensorStatus');
       const autoPauseBtn = document.getElementById('autoPauseBtn');
+      const switchModeBtn = document.getElementById('switchModeBtn');
       const clearErrorBtn = document.getElementById('clearErrorBtn');
-      
+
       // Auto-Pause Button Update
       autoPauseBtn.textContent = 'Auto-Pause: ' + (data.sensor.autoPause ? 'EIN' : 'AUS');
-      
+
+      // Switch Mode Button Update
+      switchModeBtn.textContent = 'Mode: ' + (data.sensor.switchDirectMode ? 'Direct' : 'Pause');
+
       // Pause delay slider update
       const delaySlider = document.getElementById('pauseDelay');
       if (delaySlider.value != data.sensor.pauseDelay) {
@@ -511,12 +522,12 @@ const char* getDashboardHTML() {
       }
       
       // Sensor Info Rows
-      document.getElementById('lastMotion').textContent = 
+      document.getElementById('lastMotion').textContent =
         Math.floor(data.sensor.lastMotion / 1000) + ' s';
       document.getElementById('pulseCount').textContent = data.sensor.pulseCount;
-      document.getElementById('autoPause').textContent = 
+      document.getElementById('autoPause').textContent =
         data.sensor.autoPause ? '✅ Aktiv' : '❌ Inaktiv';
-      
+
       // Temperatures
       document.getElementById('bedTemp').textContent = data.status.bedTemp.toFixed(1) + '°C';
       document.getElementById('bedTarget').textContent = 'Ziel: ' + data.status.bedTarget.toFixed(1) + '°C';

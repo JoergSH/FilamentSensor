@@ -1,0 +1,68 @@
+Centauri Carbon Monitor - Firmware Build Info
+==============================================
+
+Version: 1.0.0
+Build Date: 2025-01-13
+Build Time: 20:28 UTC
+
+Hardware Target:
+  - Board: ESP32-C3 Super Mini (nologo_esp32c3_super_mini)
+  - Chip: ESP32-C3
+  - Flash: 4MB
+  - RAM: 320KB
+
+Framework:
+  - Platform: ESP32 Arduino v3.2.0
+  - Framework: arduino
+  - Partition Scheme: Default (OTA support)
+
+Dependencies:
+  - WebSockets: 2.7.1
+  - ArduinoJson: 7.4.2
+  - ESPAsyncWebServer: 3.6.0
+  - Preferences: 3.2.0 (ESP32 NVS)
+
+Features:
+  - Filament-Runout Detection (Switch-based)
+  - Filament-Jam Detection (Motion sensor with timeout)
+  - Two operation modes (Direct/Pause)
+  - Intelligent error detection
+  - OTA update support
+  - Web dashboard with live updates
+  - Printer camera integration
+  - Persistent settings (NVS)
+
+Pin Configuration:
+  - SENSOR_SWITCH: Pin 1 (INPUT_PULLDOWN)
+  - SENSOR_MOTION: Pin 0 (INPUT_PULLUP)
+  - RUNOUT_PIN: Pin 2 (Open-drain output)
+
+Tested with:
+  - Elegoo Centauri Carbon
+  - Printer Firmware: 1.1.46
+
+Flash Addresses:
+  - Bootloader: 0x0
+  - Partitions: 0x8000
+  - Firmware:   0x10000
+
+File Sizes:
+  - bootloader.bin: 19,520 bytes
+  - partitions.bin: 3,072 bytes
+  - firmware.bin:   1,300,912 bytes
+  - Total:          1,323,504 bytes
+
+Memory Usage:
+  - RAM:   38,232 bytes (11.7% of 327,680 bytes)
+  - Flash: 1,252,212 bytes (95.5% of 1,310,720 bytes)
+
+Changelog:
+  v1.0.0 (2025-01-13)
+  - Initial release
+  - Dual operation modes (Direct/Pause)
+  - Intelligent error detection with false-positive prevention
+  - Motion sensor performance optimization
+  - Persistent settings storage
+  - OTA update capability
+  - Complete web dashboard
+  - Printer camera integration

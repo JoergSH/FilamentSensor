@@ -12,7 +12,17 @@ Getestet mit der Aktuellen Firmware 1.1.46
 - ✅ **Filament-Runout-Detektion** (Sensor erkennt fehlendes Filament)
 - ✅ **Filament-Jam-Detektion** (Motion-Sensor erkennt Verstopfung)
 - ✅ **Automatische Pause** bei Filament-Problemen
+- ✅ **Zwei Betriebsmodi**:
+  - **Direct Mode**: Sensor-Signal direkt an Drucker (Hardware-Erkennung)
+  - **Pause Mode**: Software-basierte Pause-Befehle via WebSocket
+- ✅ **Intelligente Fehlererkennungs**:
+  - Keine False-Positives beim Druckstart (wartet auf erste Filament-Bewegung)
+  - Keine Fehler auf letzter Schicht (Parking-Phase)
+  - Optimierte Motion-Sensor-Performance (vermeidet pinMode-Blocking)
+- ✅ **Persistente Einstellungen** (gespeichert im Flash)
 - ✅ **Web-Dashboard** für Überwachung und Steuerung
+- ✅ **OTA-Updates** über Web-Interface
+- ✅ **Drucker-Kamera Integration** (Live-Stream im Dashboard)
 - ✅ **REST API** für externe Integrationen
 
 ## Hardware
@@ -77,10 +87,13 @@ Das Projekt ist in logische Module aufgeteilt:
 
 - **[filament_sensor.h](src/filament_sensor.h)** / **[filament_sensor.cpp](src/filament_sensor.cpp)**
   - Filament-Sensor-Initialisierung
-  - Runout-Detection (Switch)
-  - Jam-Detection (Motion)
-  - Automatische Pause-Logik
-  - Interrupt-basierte Motion-Erkennung
+  - Runout-Detection (Switch-basiert)
+  - Jam-Detection (Motion-Sensor mit Timeout)
+  - Zwei Betriebsmodi (Direct/Pause)
+  - Automatische Pause-Logik mit intelligenter Fehlererkennungs
+  - Interrupt-basierte Motion-Erkennung (IRAM_ATTR)
+  - Persistente Einstellungen (ESP32 NVS)
+  - Optimiertes Pin-Handling (vermeidet pinMode-Blocking)
 
 ### Web-Interface
 
@@ -132,7 +145,8 @@ Gibt aktuellen Status als JSON zurück:
     "lastMotion": 250,
     "pulseCount": 1234,
     "autoPause": true,
-    "pauseDelay": 3000
+    "pauseDelay": 3000,
+    "switchDirectMode": true
   }
 }
 ```
@@ -148,8 +162,10 @@ Sendet Steuerungsbefehle:
 - `cancel` - Druck abbrechen
 - `toggleLight` - Licht umschalten
 - `toggleAutoPause` - Auto-Pause aktivieren/deaktivieren
+- `toggleSwitchMode` - Zwischen Direct und Pause Mode umschalten
 - `clearError` - Sensor-Fehler zurücksetzen
-- `setPauseDelay` - Pause-Verzögerung setzen
+- `setPauseDelay` - Motion-Timeout setzen (ms)
+- `restart` - ESP32 neu starten
 
 **Beispiel:**
 
@@ -159,21 +175,91 @@ Sendet Steuerungsbefehle:
 }
 ```
 
+## Filament-Sensor Betriebsmodi
+
+Der Filament-Sensor unterstützt zwei Betriebsmodi, die über das Dashboard umgeschaltet werden können:
+
+### Direct Mode (Standard)
+
+- **SENSOR_SWITCH** wird direkt an **RUNOUT_PIN** weitergeleitet
+- Der Drucker erkennt Filament-Probleme über den Hardware-Pin
+- Vorteile:
+  - Funktioniert auch bei WebSocket-Verbindungsabbruch
+  - Schnellste Reaktionszeit (Hardware-basiert)
+  - Drucker-Firmware übernimmt Fehlerbehandlung
+- Nachteile:
+  - Drucker muss Runout-Sensor in Firmware aktiviert haben
+  - Keine Software-basierte Filterung möglich
+
+### Pause Mode
+
+- **RUNOUT_PIN** bleibt immer HIGH (kein Fehler-Signal an Drucker)
+- ESP32 sendet Pause-Befehl über WebSocket bei Filament-Problem
+- Vorteile:
+  - Funktioniert auch ohne Drucker-seitige Runout-Unterstützung
+  - Intelligente Software-basierte Fehlererkennungs
+  - Logs und Debugging über Serial Monitor
+- Nachteile:
+  - Benötigt aktive WebSocket-Verbindung
+  - Minimal verzögerte Reaktion (Software-basiert)
+
+### Intelligente Fehlererkennung
+
+Beide Modi nutzen die intelligente Fehlererkennungs:
+
+1. **Runout-Detection**: Sofortige Erkennung wenn SENSOR_SWITCH LOW wird
+2. **Jam-Detection**: Motion-Timeout nur wenn:
+   - Druck läuft (Status = PRINTING)
+   - Druckkopf bewegt sich (Position-Check)
+   - Bereits Filament-Bewegung während Druck erkannt wurde (verhindert False-Positives beim Start)
+   - Nicht auf letzter Schicht (verhindert Fehler beim Beenden)
+
 ## Konfiguration
 
-Beim ersten Start verbinden Sie sich mit dem ESP
+### Ersteinrichtung
 
-Im Browser die Centauri-Monitor-Setup'  Seite aufrufen (http://192.168.4.1)
+Beim ersten Start verbinden Sie sich mit dem ESP:
 
-DIe Daten ihres Routers eingeben
+1. WiFi-Netzwerk "Centauri-Monitor-Setup" suchen und verbinden
+2. Im Browser die Setup-Seite aufrufen: `http://192.168.4.1`
+3. Router-Zugangsdaten eingeben (SSID & Passwort)
+4. IP-Adresse des Druckers im Netzwerk eingeben
+5. Speichern - ESP startet neu und verbindet sich mit dem Router
 
-Die IP des Druckers im Netzwerk eingeben.
+### Sensor-Einstellungen (Dashboard)
+
+Im Dashboard unter "Filament-Sensor":
+
+- **Auto-Pause**: Automatisches Pausieren bei Filament-Problemen ein/aus
+- **Mode**: Umschalten zwischen Direct und Pause Mode
+- **Verzögerung vor Pause**: Motion-Timeout in Millisekunden (Standard: 3000ms)
+  - Zu kurz: False-Positives bei Retractions
+  - Zu lang: Verzögerte Jam-Erkennung
 
 ## Installation
 
-1. VB Code und PlatformIO installieren
+### Option 1: Fertige Firmware flashen (Empfohlen für Anfänger)
+
+Die einfachste Methode ist das Flashen der vorkompilierten Firmware:
+
+1. **Firmware herunterladen**
+   - Alle Dateien aus dem `firmware/` Ordner herunterladen
+   - Oder als ZIP: [firmware.zip](firmware/)
+
+2. **ESP Web Flasher verwenden**
+   - Detaillierte Anleitung: [firmware/FLASH_INSTRUCTIONS.md](firmware/FLASH_INSTRUCTIONS.md)
+   - Online-Tool: [https://espressif.github.io/esptool-js/](https://espressif.github.io/esptool-js/)
+
+3. **Dateien flashen** (mit angegebenen Adressen):
+   - `bootloader.bin` → 0x0
+   - `partitions.bin` → 0x8000
+   - `firmware.bin` → 0x10000
+
+### Option 2: Selbst kompilieren (für Entwickler)
+
+1. VS Code und PlatformIO installieren
 2. Repository klonen
-3. `config.h` anpassen
+3. Projekt in VS Code öffnen
 4. Kompilieren und hochladen:
    ```bash
    platformio run --target upload
@@ -204,7 +290,24 @@ Vollständige Liste in [printer_status_codes.h](src/printer_status_codes.h)
 - **ESP32 Arduino Framework** (^3.2.0)
 - **WebSockets** (^2.7.1) - Drucker-Kommunikation
 - **ArduinoJson** (^7.4.2) - JSON-Parsing
-- **ESPAsyncWebServer** (^3.4.4) - Web-Dashboard
+- **ESPAsyncWebServer** (^3.6.0) - Web-Dashboard & OTA
+- **Preferences** (^3.2.0) - Persistente Einstellungen (ESP32 NVS)
+
+## Troubleshooting
+
+### WebSocket-Verbindung bricht ab
+
+**Mögliche Ursachen**:
+
+1. **WiFi-Signal schwach**: ESP32 zu weit vom Router
+2. **Drucker-IP geändert**: IP im Settings-Interface aktualisieren
+3. **Drucker neu gestartet**: WebSocket reconnect dauert ~5 Sekunden
+
+**Lösung**:
+
+- Prüfen Sie WiFi-Signal-Stärke
+- Drucker statische IP im Router zuweisen
+- Warten Sie auf automatischen Reconnect
 
 ## Entwicklung
 
@@ -214,7 +317,15 @@ Alle Module nutzen den Serial Monitor (115200 baud):
 
 - `[WS]` - WebSocket-Events
 - `[SENSOR]` - Filament-Sensor-Events
+- `[SENSOR DEBUG]` - Pin-Status und Motion-Daten
+- `[RUNOUT OUTPUT]` - Pin-Änderungen am RUNOUT_PIN
 - `[WEB]` - Webserver-Events
+
+### Performance-Optimierungen
+
+1. **pinMode-Blocking vermeiden**: `setRunoutPinOutput()` nutzt static state tracking
+2. **Interrupt-Safe**: Motion-ISR nutzt IRAM_ATTR und atomic operations
+3. **Effiziente Checks**: Motion-Check nur alle 100ms, Position-Check alle 500ms
 
 ## Lizenz
 

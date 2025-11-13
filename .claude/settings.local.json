@@ -5,7 +5,11 @@
       "Bash(pio run:*)",
       "Bash(\"C:\\Users\\joerg\\.platformio\\penv\\Scripts\\platformio.exe\" run -e nologo_esp32c3_super_mini)",
       "Bash(Select-Object -Last 50)",
-      "Read(//c/Users/joerg/Documents/PlatformIO/Projects/Dryer/**)"
+      "Read(//c/Users/joerg/Documents/PlatformIO/Projects/Dryer/**)",
+      "Bash(\"C:\\Users\\joerg\\.platformio\\penv\\Scripts\\platformio.exe\" run)",
+      "Bash(cat:*)",
+      "Bash(chmod:*)",
+      "Bash(tree:*)"
     ],
     "deny": [],
     "ask": []

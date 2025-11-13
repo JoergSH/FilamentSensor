@@ -20,7 +20,9 @@ static unsigned long lastPositionCheck = 0;
 static String lastPosition = "";
 static bool filamentErrorDetected = false;
 static bool autoPauseEnabled = true;
+static bool switchDirectMode = true;  // true = direct to RUNOUT_PIN, false = send pause command
 static unsigned long motionTimeout = MOTION_TIMEOUT;  // Default from config.h, but changeable
+static bool motionDetectedThisPrint = false;  // Track if we've seen motion during current print
 
 // Load settings from persistent storage
 void loadSensorSettings() {
@@ -32,11 +34,15 @@ void loadSensorSettings() {
   // Load auto-pause enabled (default: true)
   autoPauseEnabled = preferences.getBool("autoPause", true);
 
+  // Load switch mode (default: true = direct mode)
+  switchDirectMode = preferences.getBool("switchDirect", true);
+
   preferences.end();
 
   Serial.println("[SENSOR] Settings loaded from flash:");
   Serial.printf("[SENSOR]   Motion Timeout: %lu ms\n", motionTimeout);
   Serial.printf("[SENSOR]   Auto-Pause: %s\n", autoPauseEnabled ? "enabled" : "disabled");
+  Serial.printf("[SENSOR]   Switch Mode: %s\n", switchDirectMode ? "Direct" : "Pause Command");
 }
 
 // Save settings to persistent storage
@@ -45,6 +51,7 @@ void saveSensorSettings() {
 
   preferences.putULong("motionTimeout", motionTimeout);
   preferences.putBool("autoPause", autoPauseEnabled);
+  preferences.putBool("switchDirect", switchDirectMode);
 
   preferences.end();
 
@@ -77,9 +84,20 @@ void IRAM_ATTR filamentMotionISR() {
 void checkFilamentSensor() {
   unsigned long now = millis();
 
-  // ALWAYS forward SENSOR_SWITCH state to RUNOUT_PIN (regardless of print status or auto-pause)
+  // Read filament switch state
   bool filamentPresent = digitalRead(SENSOR_SWITCH) == HIGH;  // HIGH = present
-  setRunoutPinOutput(filamentPresent);  // Pass through: HIGH if present, LOW if absent
+
+  // Handle switch output pin based on mode (ALWAYS, even when not printing)
+  if (switchDirectMode) {
+    // DIRECT MODE: Forward SENSOR_SWITCH state INVERTED to RUNOUT_PIN
+    // Printer expects: HIGH = OK, LOW = error
+    // We have: filamentPresent true = OK, false = error
+    // So send: filamentPresent as-is (true = HIGH = OK, false = LOW = error)
+    setRunoutPinOutput(filamentPresent);  // HIGH if present (OK), LOW if absent (error)
+  } else {
+    // PAUSE COMMAND MODE: Keep RUNOUT_PIN always HIGH (no error to printer)
+    setRunoutPinOutput(true);
+  }
 
   // Only check for auto-pause when actively printing
   if (printerStatus.printStatus != SDCP_PRINT_STATUS_PRINTING &&
@@ -87,18 +105,27 @@ void checkFilamentSensor() {
       printerStatus.printStatus != SDCP_PRINT_STATUS_PRINTING_RESUME) {
     filamentErrorDetected = false;
     lastFilamentCheck = 0;  // Reset check timer
+    motionDetectedThisPrint = false;  // Reset motion tracking for next print
     return;
   }
+
+  // ===== FROM HERE ON: ONLY WHEN ACTIVELY PRINTING =====
 
   // PRIORITY 1: Check if filament switch detects no filament (IMMEDIATE)
   if (!filamentPresent && !filamentErrorDetected) {
     Serial.println("\n[SENSOR] ⚠️  FILAMENT RUNOUT DETECTED!");
     filamentErrorDetected = true;
-    if (autoPauseEnabled) {
+
+    // In Pause Mode: send pause command (Direct Mode handles via pin)
+    if (!switchDirectMode && autoPauseEnabled) {
       pausePrint();
-      Serial.println("[SENSOR] Print paused automatically (RUNOUT)");
+      Serial.println("[SENSOR] Print paused automatically (Pause Mode - RUNOUT)");
     }
     return;
+  } else if (filamentPresent && filamentErrorDetected) {
+    // Filament restored
+    Serial.println("[SENSOR] ✓ Filament restored");
+    filamentErrorDetected = false;
   }
 
   // PRIORITY 2: Check filament motion (with timeout)
@@ -108,17 +135,34 @@ void checkFilamentSensor() {
   }
   lastFilamentCheck = now;
 
+  // Check if motion pulses received (regardless of printhead movement)
+  unsigned long timeSinceLastPulse = now - lastMotionPulse;
+
+  if (motionPulseCount > 0) {
+    // Motion pulses received - reset counter
+    motionPulseCount = 0;
+    motionDetectedThisPrint = true;  // Mark that we've seen motion during this print
+
+    if (filamentErrorDetected) {
+      Serial.println("[SENSOR] ✓ Filament motion resumed");
+      filamentErrorDetected = false;
+    }
+  }
+
+  // Check if on last layer (parking, no more filament movement expected)
+  bool onLastLayer = (printerStatus.currentLayer >= printerStatus.totalLayers && printerStatus.totalLayers > 0);
+
   // Determine if printhead is moving
   bool headMoving = isPrintHeadMoving();
 
-  if (headMoving) {
-    // Printhead is moving, filament should be moving too
-    unsigned long timeSinceLastPulse = now - lastMotionPulse;
-
-    if (timeSinceLastPulse > motionTimeout && !filamentErrorDetected) {
+  if (headMoving && !onLastLayer) {
+    // Printhead is moving and not on last layer, filament should be moving too
+    // Only check for jam if we've already seen motion during this print (prevents false positives at start)
+    if (motionDetectedThisPrint && timeSinceLastPulse > motionTimeout && !filamentErrorDetected) {
       Serial.println("\n[SENSOR] ⚠️  FILAMENT JAM DETECTED!");
       Serial.printf("[SENSOR] No motion for %lu ms while printing\n", timeSinceLastPulse);
       Serial.printf("[SENSOR] Position: %s\n", printerStatus.currentCoord.c_str());
+      Serial.printf("[SENSOR] Layer: %d/%d\n", printerStatus.currentLayer, printerStatus.totalLayers);
       Serial.printf("[SENSOR] Motion pulses: %u\n", motionPulseCount.load());
 
       filamentErrorDetected = true;
@@ -126,13 +170,11 @@ void checkFilamentSensor() {
         pausePrint();
         Serial.println("[SENSOR] Print paused automatically (JAM)");
       }
-    } else if (timeSinceLastPulse < motionTimeout && motionPulseCount > 0) {
-      // Motion detected, all good
-      if (filamentErrorDetected) {
-        Serial.println("[SENSOR] ✓ Filament motion resumed");
-        filamentErrorDetected = false;
-      }
     }
+  } else if (onLastLayer && filamentErrorDetected) {
+    // On last layer, clear any previous errors
+    Serial.println("[SENSOR] Last layer - clearing filament errors");
+    filamentErrorDetected = false;
   }
 }
 
@@ -183,7 +225,7 @@ bool isFilamentErrorDetected() {
 void displayFilamentSensorStatus() {
   Serial.println("\n--- Filament Sensor ---");
   Serial.printf("Filament Present: %s\n",
-                digitalRead(SENSOR_SWITCH) != LOW ? "YES" : "NO");
+                digitalRead(SENSOR_SWITCH) == HIGH ? "YES" : "NO");
   Serial.printf("Last Motion: %lu ms ago\n", millis() - lastMotionPulse);
   Serial.printf("Motion Pulses: %u\n", motionPulseCount.load());
   Serial.printf("Error Detected: %s\n", filamentErrorDetected ? "YES" : "NO");
@@ -194,6 +236,7 @@ void resetFilamentSensor() {
   filamentErrorDetected = false;
   motionPulseCount = 0;
   lastPosition = "";
+  motionDetectedThisPrint = false;  // Reset motion tracking
   Serial.println("[SENSOR] Sensor state reset");
 }
 
@@ -220,15 +263,20 @@ unsigned long getMotionTimeout() {
 }
 
 void setRunoutPinOutput(bool state) {
-  if (state) {
-    // HIGH = Release pin (floating/high-impedance, pull-up on printer pulls to HIGH)
-    pinMode(RUNOUT_PIN, INPUT);
-    Serial.println("[RUNOUT OUTPUT] Pin IO2 released (floating -> HIGH via pull-up)");
-  } else {
-    // LOW = Pull to ground (open-drain style)
-    pinMode(RUNOUT_PIN, OUTPUT);
-    digitalWrite(RUNOUT_PIN, LOW);
-    Serial.println("[RUNOUT OUTPUT] Pin IO2 pulled to GND (LOW)");
+  static bool lastState = true;  // Track last state to avoid unnecessary pinMode changes
+
+  if (state != lastState) {
+    if (state) {
+      // HIGH = Release pin (floating/high-impedance, pull-up on printer pulls to HIGH)
+      pinMode(RUNOUT_PIN, INPUT);
+      Serial.println("[RUNOUT OUTPUT] Pin IO2 released (floating -> HIGH via pull-up)");
+    } else {
+      // LOW = Pull to ground (open-drain style)
+      pinMode(RUNOUT_PIN, OUTPUT);
+      digitalWrite(RUNOUT_PIN, LOW);
+      Serial.println("[RUNOUT OUTPUT] Pin IO2 pulled to GND (LOW)");
+    }
+    lastState = state;
   }
 }
 
@@ -242,4 +290,19 @@ String getRunoutPinState() {
   Serial.printf("[RUNOUT STATE] %s\n", result.c_str());
 
   return result;
+}
+
+bool getSwitchDirectMode() {
+  return switchDirectMode;
+}
+
+void setSwitchDirectMode(bool directMode) {
+  switchDirectMode = directMode;
+  saveSensorSettings();  // Save to flash
+  Serial.printf("[SENSOR] Switch mode set to: %s\n", directMode ? "Direct" : "Pause Command");
+}
+
+void toggleSwitchMode() {
+  setSwitchDirectMode(!switchDirectMode);
+  Serial.printf("[SENSOR] Switch mode toggled to: %s\n", switchDirectMode ? "Direct" : "Pause Command");
 }

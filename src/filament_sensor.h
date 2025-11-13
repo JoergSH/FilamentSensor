@@ -53,4 +53,9 @@ void setRunoutPinOutput(bool state);
 // Get current runout pin state
 String getRunoutPinState();
 
+// Get/Set switch mode (true = direct to RUNOUT_PIN, false = send pause command)
+bool getSwitchDirectMode();
+void setSwitchDirectMode(bool directMode);
+void toggleSwitchMode();
+
 #endif // FILAMENT_SENSOR_H
