@@ -259,6 +259,43 @@ const char* getSettingsHTML() {
       <div id="settingsStatus" class="status-message" style="display:none;"></div>
     </div>
 
+    <!-- CallMeBot WhatsApp Notifications -->
+    <div class="settings-section">
+      <h2>📱 WhatsApp-Benachrichtigungen (CallMeBot)</h2>
+
+      <div class="form-group">
+        <label>
+          <input type="checkbox" id="callmebotEnabled" style="width: auto;">
+          Benachrichtigungen aktivieren
+        </label>
+      </div>
+
+      <div class="form-group">
+        <label>Telefonnummer (mit Ländercode, z.B. 4915775323176):</label>
+        <input type="text" id="callmebotPhone" placeholder="4915775323176">
+      </div>
+
+      <div class="form-group">
+        <label>API Key:</label>
+        <input type="text" id="callmebotApiKey" placeholder="3751779">
+        <small style="color: #888;">
+          API Key erhalten: Sende "I allow callmebot to send me messages" an
+          <a href="https://wa.me/34644409248" target="_blank" style="color: #4CAF50;">+34 644 40 92 48</a>
+        </small>
+      </div>
+
+      <div class="controls">
+        <button class="btn btn-success" onclick="saveCallMeBotSettings()">
+          💾 Speichern
+        </button>
+        <button class="btn btn-secondary" onclick="testNotification()">
+          📤 Test-Nachricht senden
+        </button>
+      </div>
+
+      <div id="callmebotStatus" class="status-message" style="display:none;"></div>
+    </div>
+
     <!-- OTA Update Section -->
     <div class="settings-section">
       <h2>🔄 Firmware Update (OTA)</h2>
@@ -336,9 +373,84 @@ const char* getSettingsHTML() {
         document.getElementById('printerPort').value = data.printerPort || 80;
 
         showStatus('settingsStatus', '✅ Einstellungen geladen', 'success');
+
+        // Load CallMeBot settings
+        loadCallMeBotSettings();
       } catch (error) {
         console.error('Fehler beim Laden:', error);
         showStatus('settingsStatus', '❌ Fehler beim Laden', 'error');
+      }
+    }
+
+    async function loadCallMeBotSettings() {
+      try {
+        const response = await fetch('/api/status');
+        const data = await response.json();
+
+        if (data.notify) {
+          document.getElementById('callmebotEnabled').checked = data.notify.enabled || false;
+          document.getElementById('callmebotPhone').value = data.notify.phone || '';
+          // Don't load API key for security (show placeholder if set)
+          if (data.notify.hasApiKey) {
+            document.getElementById('callmebotApiKey').placeholder = '****** (gespeichert)';
+          }
+        }
+      } catch (error) {
+        console.error('Fehler beim Laden der CallMeBot-Einstellungen:', error);
+      }
+    }
+
+    async function saveCallMeBotSettings() {
+      const enabled = document.getElementById('callmebotEnabled').checked;
+      const phone = document.getElementById('callmebotPhone').value;
+      const apiKey = document.getElementById('callmebotApiKey').value;
+
+      try {
+        const response = await fetch('/api/control', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            action: 'setCallMeBotSettings',
+            enabled: enabled,
+            phone: phone,
+            apiKey: apiKey
+          })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          showStatus('callmebotStatus', '✅ ' + data.message, 'success');
+          // Clear API key field after successful save
+          document.getElementById('callmebotApiKey').value = '';
+          document.getElementById('callmebotApiKey').placeholder = '****** (gespeichert)';
+        } else {
+          showStatus('callmebotStatus', '❌ ' + data.message, 'error');
+        }
+      } catch (error) {
+        console.error('Fehler beim Speichern:', error);
+        showStatus('callmebotStatus', '❌ Fehler beim Speichern', 'error');
+      }
+    }
+
+    async function testNotification() {
+      try {
+        const response = await fetch('/api/control', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'testNotification' })
+        });
+
+        const data = await response.json();
+
+        if (data.success) {
+          showStatus('callmebotStatus', '✅ Test-Nachricht gesendet!', 'success');
+        } else {
+          showStatus('callmebotStatus', '❌ ' + data.message, 'error');
+        }
+      } catch (error) {
+        console.error('Fehler:', error);
+        showStatus('callmebotStatus', '❌ Fehler beim Senden', 'error');
       }
     }
 

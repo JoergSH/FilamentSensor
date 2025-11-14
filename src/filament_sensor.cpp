@@ -7,6 +7,7 @@
 #include "printer_status.h"
 #include "printer_status_codes.h"
 #include "printer_control.h"
+#include "callmebot.h"
 #include <Preferences.h>
 
 // Preferences namespace
@@ -62,6 +63,9 @@ void setupFilamentSensor() {
   // Load saved settings from flash
   loadSensorSettings();
 
+  // Initialize motion timer to current time (prevent false jam on first print)
+  lastMotionPulse = millis();
+
   pinMode(SENSOR_SWITCH, INPUT_PULLDOWN);
   pinMode(SENSOR_MOTION, INPUT_PULLUP);
 
@@ -116,6 +120,9 @@ void checkFilamentSensor() {
     Serial.println("\n[SENSOR] ⚠️  FILAMENT RUNOUT DETECTED!");
     filamentErrorDetected = true;
 
+    // Send WhatsApp notification
+    notifyFilamentError("Filament-Runout");
+
     // In Pause Mode: send pause command (Direct Mode handles via pin)
     if (!switchDirectMode && autoPauseEnabled) {
       pausePrint();
@@ -166,6 +173,10 @@ void checkFilamentSensor() {
       Serial.printf("[SENSOR] Motion pulses: %u\n", motionPulseCount.load());
 
       filamentErrorDetected = true;
+
+      // Send WhatsApp notification
+      notifyFilamentError("Filament-Stau");
+
       if (autoPauseEnabled) {
         pausePrint();
         Serial.println("[SENSOR] Print paused automatically (JAM)");
@@ -235,9 +246,10 @@ void displayFilamentSensorStatus() {
 void resetFilamentSensor() {
   filamentErrorDetected = false;
   motionPulseCount = 0;
+  lastMotionPulse = millis();  // Reset motion timer to current time
   lastPosition = "";
   motionDetectedThisPrint = false;  // Reset motion tracking
-  Serial.println("[SENSOR] Sensor state reset");
+  Serial.println("[SENSOR] Sensor state reset (motion timer reset)");
 }
 
 unsigned long getLastMotionPulse() {

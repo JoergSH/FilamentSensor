@@ -22,6 +22,7 @@ Getestet mit der Aktuellen Firmware 1.1.46
 - ✅ **Web-Dashboard** für Überwachung und Steuerung
 - ✅ **OTA-Updates** über Web-Interface
 - ✅ **Drucker-Kamera Integration** (Live-Stream im Dashboard)
+- ✅ **WhatsApp-Benachrichtigungen** via CallMeBot (Filament-Fehler, Druck abgeschlossen)
 - ✅ **REST API** für externe Integrationen
 
 ## Hardware
@@ -94,6 +95,17 @@ Das Projekt ist in logische Module aufgeteilt:
   - Persistente Einstellungen (ESP32 NVS)
   - Optimiertes Pin-Handling (vermeidet pinMode-Blocking)
 
+### Benachrichtigungs-Modul
+
+- **[callmebot.h](src/callmebot.h)** / **[callmebot.cpp](src/callmebot.cpp)**
+  - WhatsApp-Benachrichtigungen via CallMeBot API
+  - Benachrichtigungen bei Filament-Runout und Filament-Jam
+  - Benachrichtigung bei Druck abgeschlossen (mit Druckdauer)
+  - Rate-Limiting (60 Sekunden Cooldown)
+  - URL-Encoding für deutsche Umlaute (ä, ö, ü, ß)
+  - Persistente Einstellungen (ESP32 NVS)
+  - Konfiguration über Web-Interface
+
 ### Web-Interface
 
 - **[dashboard.h](src/dashboard.h)**
@@ -146,6 +158,11 @@ Gibt aktuellen Status als JSON zurück:
     "autoPause": true,
     "pauseDelay": 3000,
     "switchDirectMode": true
+  },
+  "notify": {
+    "enabled": true,
+    "phone": "491701234567",
+    "hasApiKey": true
   }
 }
 ```
@@ -164,6 +181,8 @@ Sendet Steuerungsbefehle:
 - `toggleSwitchMode` - Zwischen Direct und Pause Mode umschalten
 - `clearError` - Sensor-Fehler zurücksetzen
 - `setPauseDelay` - Motion-Timeout setzen (ms)
+- `setCallMeBotSettings` - CallMeBot-Einstellungen setzen (enabled, phone, apiKey)
+- `testNotification` - Test-Benachrichtigung senden
 - `restart` - ESP32 neu starten
 
 **Beispiel:**
@@ -173,6 +192,71 @@ Sendet Steuerungsbefehle:
   "action": "pause"
 }
 ```
+
+## WhatsApp-Benachrichtigungen (CallMeBot)
+
+Das System kann automatisch WhatsApp-Benachrichtigungen über den CallMeBot-Service senden.
+
+### Einrichtung
+
+1. **CallMeBot API-Key erhalten**:
+   - Sende "I allow callmebot to send me messages" an WhatsApp-Nummer: **+34 644 40 92 48**
+   - Du erhältst eine Antwort mit deinem API-Key
+   - Beispiel: `Your apikey is: 1234567`
+
+2. **In den Settings konfigurieren**:
+   - Öffne die Settings-Seite im Dashboard
+   - Scrolle zu "📱 WhatsApp-Benachrichtigungen (CallMeBot)"
+   - Aktiviere "Benachrichtigungen aktivieren"
+   - Trage deine Telefonnummer ein (mit Ländercode, z.B. `491701234567`)
+   - Trage deinen API-Key ein (z.B. `1234567`)
+   - Klicke auf "💾 Speichern"
+
+3. **Test-Nachricht senden**:
+   - Klicke auf "📤 Test-Nachricht senden"
+   - Du solltest eine WhatsApp-Nachricht erhalten
+
+### Benachrichtigungstypen
+
+Das System sendet automatisch Benachrichtigungen bei folgenden Events:
+
+1. **Filament-Runout erkannt**
+   ```
+   🚨 Centauri Carbon Alarm!
+
+   Filament-Runout erkannt!
+
+   Druck wurde pausiert.
+   ```
+
+2. **Filament-Stau erkannt**
+   ```
+   🚨 Centauri Carbon Alarm!
+
+   Filament-Stau erkannt!
+
+   Druck wurde pausiert.
+   ```
+
+3. **Druck abgeschlossen**
+   ```
+   ✅ Druck abgeschlossen!
+
+   Datei: model.gcode
+   Dauer: 2h 45min
+   ```
+
+### Rate-Limiting
+
+- **CallMeBot API**: Minimum 3 Minuten zwischen Nachrichten (API-Limit)
+- **System-Cooldown**: 60 Sekunden zwischen Benachrichtigungen
+- Dies verhindert Spam und hält die API-Limits ein
+
+### Sicherheit
+
+- Der API-Key wird verschlüsselt im ESP32 NVS (Flash) gespeichert
+- Der API-Key wird niemals in der Status-API angezeigt
+- Nur die Information "hasApiKey: true/false" ist sichtbar
 
 ## Filament-Sensor Betriebsmodi
 
@@ -291,6 +375,7 @@ Vollständige Liste in [printer_status_codes.h](src/printer_status_codes.h)
 - **WebSockets** (^2.7.1) - Drucker-Kommunikation
 - **ArduinoJson** (^7.4.2) - JSON-Parsing
 - **ESPAsyncWebServer** (^3.6.0) - Web-Dashboard & OTA
+- **HTTPClient** (^3.2.0) - CallMeBot API-Kommunikation
 - **Preferences** (^3.2.0) - Persistente Einstellungen (ESP32 NVS)
 
 ## Troubleshooting
@@ -320,6 +405,8 @@ Alle Module nutzen den Serial Monitor (115200 baud):
 - `[SENSOR DEBUG]` - Pin-Status und Motion-Daten
 - `[RUNOUT OUTPUT]` - Pin-Änderungen am RUNOUT_PIN
 - `[WEB]` - Webserver-Events
+- `[CALLMEBOT]` - WhatsApp-Benachrichtigungen
+- `[STATUS]` - Printer-Status-Änderungen
 
 ### Performance-Optimierungen
 

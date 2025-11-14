@@ -15,6 +15,7 @@
 #include "printer_control.h"
 #include "filament_sensor.h"
 #include "ota_update.h"
+#include "callmebot.h"
 
 // Timing variables
 unsigned long lastStatusRequest = 0;
@@ -38,6 +39,9 @@ void setup() {
 
   // Initialize filament sensor
   setupFilamentSensor();
+
+  // Initialize CallMeBot notifications
+  setupCallMeBot();
 
   // Check if system is configured
   if (!isConfigured()) {
@@ -98,4 +102,7 @@ void loop() {
 
   // Check filament sensor
   checkFilamentSensor();
+
+  // Check for status changes and send notifications
+  checkStatusNotifications();
 }

@@ -13,6 +13,7 @@
 #include "printer_control.h"
 #include "filament_sensor.h"
 #include "ota_update.h"
+#include "callmebot.h"
 #include <ArduinoJson.h>
 
 // Web server instance
@@ -168,6 +169,12 @@ void setupWebServer() {
     bool filamentPresent = digitalRead(SENSOR_SWITCH) == HIGH;
     sensor["noFilament"] = !filamentPresent;
 
+    // CallMeBot notification settings
+    JsonObject notify = doc["notify"].to<JsonObject>();
+    notify["enabled"] = getCallMeBotEnabled();
+    notify["phone"] = getCallMeBotPhone();
+    notify["hasApiKey"] = getCallMeBotApiKey().length() > 0;
+
     String output;
     serializeJson(doc, output);
     request->send(200, "application/json", output);
@@ -220,6 +227,30 @@ void setupWebServer() {
         unsigned long delay = doc["delay"] | getMotionTimeout();
         setMotionTimeout(delay);
         response["message"] = "Pause delay updated to " + String(delay) + " ms";
+      }
+      else if (action == "setCallMeBotSettings") {
+        bool enabled = doc["enabled"] | false;
+        String phone = doc["phone"] | "";
+        String apiKey = doc["apiKey"] | "";
+
+        Serial.println("[WEB] setCallMeBotSettings received:");
+        Serial.printf("[WEB]   enabled: %s\n", enabled ? "true" : "false");
+        Serial.printf("[WEB]   phone: %s\n", phone.c_str());
+        Serial.printf("[WEB]   apiKey: %s\n", apiKey.length() > 0 ? "***" : "(empty)");
+
+        setCallMeBotEnabled(enabled);
+        if (phone.length() > 0) {
+          setCallMeBotPhone(phone);
+        }
+        if (apiKey.length() > 0) {
+          setCallMeBotApiKey(apiKey);
+        }
+
+        response["message"] = "CallMeBot settings updated";
+      }
+      else if (action == "testNotification") {
+        sendWhatsAppNotification("Test Nachricht vom Centauri Carbon Monitor!");
+        response["message"] = "Test notification sent";
       }
       else if (action == "restart") {
         response["message"] = "Restarting ESP32...";

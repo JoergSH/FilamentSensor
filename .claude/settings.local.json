@@ -9,7 +9,9 @@
       "Bash(\"C:\\Users\\joerg\\.platformio\\penv\\Scripts\\platformio.exe\" run)",
       "Bash(cat:*)",
       "Bash(chmod:*)",
-      "Bash(tree:*)"
+      "Bash(tree:*)",
+      "Bash(\"C:\\Users\\joerg\\.platformio\\penv\\Scripts\\platformio.exe\" run --target upload)",
+      "Bash(\"C:\\Users\\joerg\\.platformio\\penv\\Scripts\\platformio.exe\" run --target upload -e nologo_esp32c3_super_mini)"
     ],
     "deny": [],
     "ask": []

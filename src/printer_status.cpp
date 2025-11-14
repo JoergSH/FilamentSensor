@@ -5,10 +5,15 @@
 #include "printer_status.h"
 #include "printer_status_codes.h"
 #include "filament_sensor.h"
+#include "callmebot.h"
 #include "config.h"
 
 // Global printer status instance
 PrinterStatus printerStatus;
+
+// Track status changes for notifications
+static int lastPrintStatus = -1;
+static unsigned long printStartTime = 0;
 
 void displayPrinterStatus() {
   Serial.println("\n========================================");
@@ -63,4 +68,36 @@ void displayPrinterStatus() {
   Serial.printf("Auto-Pause: %s\n", getAutoPauseEnabled() ? "Enabled" : "Disabled");
 
   Serial.println("========================================\n");
+}
+
+void checkStatusNotifications() {
+  // Check if print status changed
+  if (printerStatus.printStatus != lastPrintStatus) {
+    // Print started or resumed - reset filament sensor timer
+    if (lastPrintStatus != SDCP_PRINT_STATUS_PRINTING &&
+        lastPrintStatus != SDCP_PRINT_STATUS_PRINTING_ALT &&
+        lastPrintStatus != SDCP_PRINT_STATUS_PRINTING_RESUME &&
+        (printerStatus.printStatus == SDCP_PRINT_STATUS_PRINTING ||
+         printerStatus.printStatus == SDCP_PRINT_STATUS_PRINTING_ALT ||
+         printerStatus.printStatus == SDCP_PRINT_STATUS_PRINTING_RESUME)) {
+
+      resetFilamentSensor();  // Reset motion timer to prevent false jam detection
+      printStartTime = millis();
+      Serial.println("[STATUS] Print started/resumed - filament sensor reset");
+    }
+
+    // Print completed (when transitioning to STOPPED or IDLE after printing)
+    if ((printerStatus.printStatus == SDCP_PRINT_STATUS_STOPPED ||
+         printerStatus.printStatus == SDCP_PRINT_STATUS_IDLE) &&
+        (lastPrintStatus == SDCP_PRINT_STATUS_PRINTING ||
+         lastPrintStatus == SDCP_PRINT_STATUS_PRINTING_ALT ||
+         lastPrintStatus == SDCP_PRINT_STATUS_PRINTING_RESUME)) {
+
+      unsigned long duration = millis() - printStartTime;
+      notifyPrintComplete(printerStatus.filename.c_str(), duration);
+      Serial.println("[STATUS] Print completed notification sent");
+    }
+
+    lastPrintStatus = printerStatus.printStatus;
+  }
 }

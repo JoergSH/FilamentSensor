@@ -39,6 +39,9 @@ extern PrinterStatus printerStatus;
 // Display current status
 void displayPrinterStatus();
 
+// Check for status changes and send notifications
+void checkStatusNotifications();
+
 // Note: getStatusText() is defined in printer_status_codes.h
 
 #endif // PRINTER_STATUS_H
