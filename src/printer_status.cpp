@@ -14,6 +14,7 @@ PrinterStatus printerStatus;
 // Track status changes for notifications
 static int lastPrintStatus = -1;
 static unsigned long printStartTime = 0;
+static String currentPrintFilename = "";  // Store filename during print
 
 void displayPrinterStatus() {
   Serial.println("\n========================================");
@@ -73,6 +74,16 @@ void displayPrinterStatus() {
 void checkStatusNotifications() {
   // Check if print status changed
   if (printerStatus.printStatus != lastPrintStatus) {
+    // Log EVERY status change for debugging
+    Serial.println("\n========================================");
+    Serial.println("   STATUS CHANGE DETECTED!");
+    Serial.println("========================================");
+    Serial.printf("Last Status: %d (%s)\n", lastPrintStatus,
+                  lastPrintStatus >= 0 ? getStatusText(lastPrintStatus) : "INIT");
+    Serial.printf("New Status:  %d (%s)\n", printerStatus.printStatus,
+                  getStatusText(printerStatus.printStatus));
+    Serial.println("========================================\n");
+
     // Print started or resumed - reset filament sensor timer
     if (lastPrintStatus != SDCP_PRINT_STATUS_PRINTING &&
         lastPrintStatus != SDCP_PRINT_STATUS_PRINTING_ALT &&
@@ -83,19 +94,36 @@ void checkStatusNotifications() {
 
       resetFilamentSensor();  // Reset motion timer to prevent false jam detection
       printStartTime = millis();
-      Serial.println("[STATUS] Print started/resumed - filament sensor reset");
+      Serial.println("[STATUS] ✓ Print started/resumed - filament sensor reset");
     }
 
-    // Print completed (when transitioning to STOPPED or IDLE after printing)
-    if ((printerStatus.printStatus == SDCP_PRINT_STATUS_STOPPED ||
-         printerStatus.printStatus == SDCP_PRINT_STATUS_IDLE) &&
-        (lastPrintStatus == SDCP_PRINT_STATUS_PRINTING ||
-         lastPrintStatus == SDCP_PRINT_STATUS_PRINTING_ALT ||
-         lastPrintStatus == SDCP_PRINT_STATUS_PRINTING_RESUME)) {
+    // Print completed (when transitioning to COMPLETE, STOPPED or IDLE after printing)
+    bool isCompletedStatus = (printerStatus.printStatus == SDCP_PRINT_STATUS_COMPLETE ||
+                               printerStatus.printStatus == SDCP_PRINT_STATUS_STOPPED ||
+                               printerStatus.printStatus == SDCP_PRINT_STATUS_IDLE);
+    bool wasPrinting = (lastPrintStatus == SDCP_PRINT_STATUS_PRINTING ||
+                         lastPrintStatus == SDCP_PRINT_STATUS_PRINTING_ALT ||
+                         lastPrintStatus == SDCP_PRINT_STATUS_PRINTING_RESUME);
 
+    Serial.printf("[STATUS DEBUG] isCompletedStatus: %s, wasPrinting: %s\n",
+                  isCompletedStatus ? "YES" : "NO", wasPrinting ? "YES" : "NO");
+
+    if (isCompletedStatus && wasPrinting) {
       unsigned long duration = millis() - printStartTime;
+      Serial.println("\n========================================");
+      Serial.println("   🎉 PRINT COMPLETED!");
+      Serial.println("========================================");
+      Serial.printf("Filename: %s\n", printerStatus.filename.c_str());
+      Serial.printf("Duration: %lu ms\n", duration);
+      Serial.printf("Transition: %d (%s) -> %d (%s)\n",
+                    lastPrintStatus, getStatusText(lastPrintStatus),
+                    printerStatus.printStatus, getStatusText(printerStatus.printStatus));
+      Serial.println("Sending WhatsApp notification...");
+      Serial.println("========================================\n");
+
       notifyPrintComplete(printerStatus.filename.c_str(), duration);
-      Serial.println("[STATUS] Print completed notification sent");
+      Serial.printf("[STATUS] ✅ Print completed notification sent (status changed from %d to %d)\n",
+                    lastPrintStatus, printerStatus.printStatus);
     }
 
     lastPrintStatus = printerStatus.printStatus;

@@ -16,14 +16,14 @@
 #define SDCP_PRINT_STATUS_PAUSED 6
 #define SDCP_PRINT_STATUS_STOPPING 7
 #define SDCP_PRINT_STATUS_STOPPED 8
-#define SDCP_PRINT_STATUS_PREPARING 9
+#define SDCP_PRINT_STATUS_COMPLETE 9           // Print Complete (like Orca Slicer shows)
 #define SDCP_PRINT_STATUS_PAUSED_ALT 10        // Alternative Paused Code
 #define SDCP_PRINT_STATUS_PRINTING 11
 #define SDCP_PRINT_STATUS_UNKNOWN_12 12
 #define SDCP_PRINT_STATUS_PRINTING_ALT 13      // Printing (FDM Mode)
 #define SDCP_PRINT_STATUS_UNKNOWN_14 14
 #define SDCP_PRINT_STATUS_UNKNOWN_15 15
-#define SDCP_PRINT_STATUS_PREPARING_ALT 16     // Preparing (Initial Start)
+#define SDCP_PRINT_STATUS_PREPARING 16         // Preparing (Initial Start)
 #define SDCP_PRINT_STATUS_UNKNOWN_17 17
 #define SDCP_PRINT_STATUS_PRINTING_RESUME 18   // Printing (After Resume)
 #define SDCP_PRINT_STATUS_UNKNOWN_19 19
@@ -41,11 +41,11 @@ inline const char* getStatusText(int code) {
         case SDCP_PRINT_STATUS_PAUSED: return "PAUSED";
         case SDCP_PRINT_STATUS_STOPPING: return "STOPPING";
         case SDCP_PRINT_STATUS_STOPPED: return "STOPPED";
-        case SDCP_PRINT_STATUS_PREPARING: return "PREPARING";
+        case SDCP_PRINT_STATUS_COMPLETE: return "COMPLETE";        // Code 9
         case SDCP_PRINT_STATUS_PAUSED_ALT: return "PAUSED";
         case SDCP_PRINT_STATUS_PRINTING: return "PRINTING";
         case SDCP_PRINT_STATUS_PRINTING_ALT: return "PRINTING";
-        case SDCP_PRINT_STATUS_PREPARING_ALT: return "PREPARING";
+        case SDCP_PRINT_STATUS_PREPARING: return "PREPARING";      // Code 16
         case SDCP_PRINT_STATUS_PRINTING_RESUME: return "PRINTING";  // Code 18
         case SDCP_PRINT_STATUS_PREPARING_RESUME: return "PREPARING"; // Code 20
         default: return "UNKNOWN";

@@ -468,8 +468,9 @@ const char* getDashboardHTML() {
     function updateUI(data) {
       // Status
       const statusText = data.status.stateText;
+      const statusCode = data.status.state;
       const badge = document.getElementById('statusBadge');
-      badge.textContent = statusText;
+      badge.textContent = statusText + ' (' + statusCode + ')';
       badge.className = 'status-badge';
       
       if (data.status.state === 11) {  // PRINTING
