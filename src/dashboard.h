@@ -47,14 +47,17 @@ const char* getDashboardHTML() {
 
     .grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      grid-template-columns: 1fr;
       gap: 15px;
       margin-bottom: 15px;
     }
 
-    @media (min-width: 1000px) {
+    @media (min-width: 700px) {
       .grid {
         grid-template-columns: repeat(2, 1fr);
+      }
+      .card-wide {
+        grid-column: span 2;
       }
     }
 
@@ -467,7 +470,7 @@ const char* getDashboardHTML() {
       </div>
 
       <!-- Kamera über 2 Spalten -->
-      <div class="card" style="grid-column: span 2;">
+      <div class="card card-wide">
         <h2 style="display: flex; justify-content: space-between; align-items: center;">
           <span>📷 Live-Kamera</span>
           <button onclick="refreshCamera()" class="secondary" style="padding: 6px 12px; font-size: 0.9em; margin: 0;">🔄 Refresh</button>
