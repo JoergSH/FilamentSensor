@@ -84,7 +84,7 @@ void checkStatusNotifications() {
                   getStatusText(printerStatus.printStatus));
     Serial.println("========================================\n");
 
-    // Print started or resumed - reset filament sensor timer
+    // Print started or resumed - reset filament sensor timer and save filename
     if (lastPrintStatus != SDCP_PRINT_STATUS_PRINTING &&
         lastPrintStatus != SDCP_PRINT_STATUS_PRINTING_ALT &&
         lastPrintStatus != SDCP_PRINT_STATUS_PRINTING_RESUME &&
@@ -94,7 +94,9 @@ void checkStatusNotifications() {
 
       resetFilamentSensor();  // Reset motion timer to prevent false jam detection
       printStartTime = millis();
-      Serial.println("[STATUS] ✓ Print started/resumed - filament sensor reset");
+      currentPrintFilename = printerStatus.filename;  // Save filename for completion notification
+      Serial.printf("[STATUS] ✓ Print started/resumed - filament sensor reset, filename: %s\n",
+                    currentPrintFilename.c_str());
     }
 
     // Print completed (when transitioning to COMPLETE, STOPPED or IDLE after printing)
@@ -113,7 +115,7 @@ void checkStatusNotifications() {
       Serial.println("\n========================================");
       Serial.println("   🎉 PRINT COMPLETED!");
       Serial.println("========================================");
-      Serial.printf("Filename: %s\n", printerStatus.filename.c_str());
+      Serial.printf("Filename: %s\n", currentPrintFilename.c_str());
       Serial.printf("Duration: %lu ms\n", duration);
       Serial.printf("Transition: %d (%s) -> %d (%s)\n",
                     lastPrintStatus, getStatusText(lastPrintStatus),
@@ -121,7 +123,8 @@ void checkStatusNotifications() {
       Serial.println("Sending WhatsApp notification...");
       Serial.println("========================================\n");
 
-      notifyPrintComplete(printerStatus.filename.c_str(), duration);
+      // Use saved filename instead of current (which might be empty)
+      notifyPrintComplete(currentPrintFilename.c_str(), duration);
       Serial.printf("[STATUS] ✅ Print completed notification sent (status changed from %d to %d)\n",
                     lastPrintStatus, printerStatus.printStatus);
     }

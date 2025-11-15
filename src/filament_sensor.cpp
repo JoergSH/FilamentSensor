@@ -115,6 +115,14 @@ void checkFilamentSensor() {
 
   // ===== FROM HERE ON: ONLY WHEN ACTIVELY PRINTING =====
 
+  // CRITICAL: Do not check for filament errors until Layer 1 is reached
+  // This prevents false errors during warmup/homing/priming
+  if (printerStatus.currentLayer < 1) {
+    Serial.println("[SENSOR] Warmup/Layer 0 - filament check disabled");
+    filamentErrorDetected = false;
+    return;
+  }
+
   // PRIORITY 1: Check if filament switch detects no filament (IMMEDIATE)
   if (!filamentPresent && !filamentErrorDetected) {
     Serial.println("\n[SENSOR] ⚠️  FILAMENT RUNOUT DETECTED!");

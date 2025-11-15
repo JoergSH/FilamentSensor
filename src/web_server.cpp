@@ -175,10 +175,81 @@ void setupWebServer() {
     notify["phone"] = getCallMeBotPhone();
     notify["hasApiKey"] = getCallMeBotApiKey().length() > 0;
 
+    // WiFi and Printer configuration
+    SystemConfig& config = getConfig();
+    doc["wifiSSID"] = config.wifiSSID;
+    doc["printerIP"] = config.printerIP;
+    doc["printerPort"] = config.printerPort;
+
     String output;
     serializeJson(doc, output);
     request->send(200, "application/json", output);
   });
+
+  // API: Update settings (printer IP, etc.)
+  webServer.on("/api/settings", HTTP_POST, [](AsyncWebServerRequest *request) {}, NULL,
+    [](AsyncWebServerRequest *request, uint8_t *data, size_t len, size_t index, size_t total) {
+      JsonDocument doc;
+      DeserializationError error = deserializeJson(doc, data, len);
+
+      if (error) {
+        request->send(400, "application/json", "{\"success\":false,\"message\":\"Invalid JSON\"}");
+        return;
+      }
+
+      // Update WiFi configuration if provided
+      if (doc["wifiSSID"].is<const char*>() && doc["wifiPassword"].is<const char*>()) {
+        String wifiSSID = doc["wifiSSID"].as<String>();
+        String wifiPassword = doc["wifiPassword"].as<String>();
+
+        Serial.printf("[WEB] Updating WiFi config: SSID=%s\n", wifiSSID.c_str());
+        updateWiFiConfig(wifiSSID.c_str(), wifiPassword.c_str());
+
+        JsonDocument response;
+        response["success"] = true;
+        response["message"] = "WiFi settings saved. Restarting...";
+
+        String output;
+        serializeJson(response, output);
+        request->send(200, "application/json", output);
+
+        // Restart ESP32 after 2 seconds
+        delay(2000);
+        ESP.restart();
+        return;
+      }
+
+      // Update printer configuration if provided
+      if (doc["printerIP"].is<const char*>()) {
+        String printerIP = doc["printerIP"].as<String>();
+        int printerPort = doc["printerPort"] | 80;
+
+        Serial.printf("[WEB] Updating printer config: IP=%s, Port=%d\n", printerIP.c_str(), printerPort);
+        updatePrinterConfig(printerIP.c_str(), printerPort);
+
+        JsonDocument response;
+        response["success"] = true;
+        response["message"] = "Settings saved. Restarting...";
+
+        String output;
+        serializeJson(response, output);
+        request->send(200, "application/json", output);
+
+        // Restart ESP32 after 2 seconds
+        delay(2000);
+        ESP.restart();
+        return;
+      }
+
+      JsonDocument response;
+      response["success"] = false;
+      response["message"] = "No settings to update";
+
+      String output;
+      serializeJson(response, output);
+      request->send(400, "application/json", output);
+    }
+  );
 
   // API: Control commands
   webServer.on("/api/control", HTTP_POST, [](AsyncWebServerRequest *request) {}, NULL,
@@ -326,6 +397,8 @@ void setupWebServer() {
   webServer.on("/api/ota/upload", HTTP_POST,
     [](AsyncWebServerRequest *request) {
       // This is called after upload completes
+      Serial.printf("[OTA] Request handler called, OTA status: %d\n", getOTAStatus());
+
       JsonDocument doc;
 
       if (getOTAStatus() == OTA_SUCCESS) {
@@ -342,6 +415,7 @@ void setupWebServer() {
       } else {
         doc["success"] = false;
         doc["message"] = getOTAError();
+        Serial.printf("[OTA] ERROR in request handler: %s\n", getOTAError().c_str());
 
         String output;
         serializeJson(doc, output);
@@ -350,13 +424,15 @@ void setupWebServer() {
     },
     [](AsyncWebServerRequest *request, String filename, size_t index, uint8_t *data, size_t len, bool final) {
       // This is called for each chunk of uploaded data
+      Serial.printf("[OTA] Upload callback: filename=%s, index=%d, len=%d, final=%d\n",
+                    filename.c_str(), index, len, final);
 
       if (index == 0) {
         // First chunk - start OTA update
         Serial.printf("[OTA] Upload started: %s, size: %d bytes\n", filename.c_str(), request->contentLength());
 
         if (!startOTAUpdate(request->contentLength())) {
-          Serial.println("[OTA] Failed to start update");
+          Serial.printf("[OTA] Failed to start update: %s\n", getOTAError().c_str());
           return;
         }
       }
@@ -364,7 +440,7 @@ void setupWebServer() {
       // Write chunk
       if (getOTAStatus() == OTA_UPDATING) {
         if (!writeOTAChunk(data, len)) {
-          Serial.println("[OTA] Failed to write chunk");
+          Serial.printf("[OTA] Failed to write chunk: %s\n", getOTAError().c_str());
           return;
         }
       }
@@ -374,7 +450,7 @@ void setupWebServer() {
         Serial.printf("[OTA] Upload finished, total size: %d bytes\n", index + len);
 
         if (!finishOTAUpdate()) {
-          Serial.println("[OTA] Failed to finish update");
+          Serial.printf("[OTA] Failed to finish update: %s\n", getOTAError().c_str());
         }
       }
     }

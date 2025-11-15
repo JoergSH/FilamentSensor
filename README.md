@@ -4,8 +4,7 @@ ESP32-basierte Überwachungslösung für den Elegoo Centauri Carbon 3D-Drucker m
 
 Getestet mit der Aktuellen Firmware 1.1.46
 
-
-![1763063286044](image/README/1763063286044.png)Features
+![1763177370786](image/README/1763177370786.png)Features
 
 - ✅ **Echtzeit-Druckerüberwachung** via WebSocket
 - ✅ **Filament-Runout-Detektion** (Sensor erkennt fehlendes Filament)
@@ -200,19 +199,20 @@ Das System kann automatisch WhatsApp-Benachrichtigungen über den CallMeBot-Serv
 ### Einrichtung
 
 1. **CallMeBot API-Key erhalten**:
+
    - Sende "I allow callmebot to send me messages" an WhatsApp-Nummer: **+34 644 40 92 48**
    - Du erhältst eine Antwort mit deinem API-Key
    - Beispiel: `Your apikey is: 1234567`
-
 2. **In den Settings konfigurieren**:
+
    - Öffne die Settings-Seite im Dashboard
    - Scrolle zu "📱 WhatsApp-Benachrichtigungen (CallMeBot)"
    - Aktiviere "Benachrichtigungen aktivieren"
    - Trage deine Telefonnummer ein (mit Ländercode, z.B. `491701234567`)
    - Trage deinen API-Key ein (z.B. `1234567`)
    - Klicke auf "💾 Speichern"
-
 3. **Test-Nachricht senden**:
+
    - Klicke auf "📤 Test-Nachricht senden"
    - Du solltest eine WhatsApp-Nachricht erhalten
 
@@ -221,6 +221,7 @@ Das System kann automatisch WhatsApp-Benachrichtigungen über den CallMeBot-Serv
 Das System sendet automatisch Benachrichtigungen bei folgenden Events:
 
 1. **Filament-Runout erkannt**
+
    ```
    🚨 Centauri Carbon Alarm!
 
@@ -228,8 +229,8 @@ Das System sendet automatisch Benachrichtigungen bei folgenden Events:
 
    Druck wurde pausiert.
    ```
-
 2. **Filament-Stau erkannt**
+
    ```
    🚨 Centauri Carbon Alarm!
 
@@ -237,8 +238,8 @@ Das System sendet automatisch Benachrichtigungen bei folgenden Events:
 
    Druck wurde pausiert.
    ```
-
 3. **Druck abgeschlossen**
+
    ```
    ✅ Druck abgeschlossen!
 

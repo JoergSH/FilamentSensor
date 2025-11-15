@@ -11,460 +11,573 @@ const char* getDashboardHTML() {
   <title>Centauri Carbon Monitor</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    
+
     body {
       font-family: 'Segoe UI', system-ui, sans-serif;
-      background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-      color: #fff;
-      min-height: 100vh;
-      padding: 20px;
-    }
-    
-    .container {
-      max-width: 1800px;
-      margin: 0 auto;
-    }
-    
-    header {
-      text-align: center;
-      margin-bottom: 30px;
-      padding: 20px;
-      background: rgba(255,255,255,0.1);
-      border-radius: 15px;
-      backdrop-filter: blur(10px);
-    }
-    
-    h1 {
-      font-size: 2.5em;
-      margin-bottom: 10px;
-      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
-    }
-    
-    .subtitle {
-      opacity: 0.9;
-      font-size: 1.1em;
-    }
-    
-    .grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-      gap: 20px;
-      margin-bottom: 20px;
+      background: #0a0a0a;
+      color: #e0e0e0;
+      padding: 15px;
+      font-size: 14px;
     }
 
-    @media (min-width: 1400px) {
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    header {
+      background: linear-gradient(135deg, #1a1a1a 0%, #2a2a2a 100%);
+      border: 1px solid #ff0000;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 1.8em;
+      color: #ff0000;
+      margin-bottom: 5px;
+    }
+
+    .subtitle {
+      color: #888;
+      font-size: 0.9em;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 15px;
+      margin-bottom: 15px;
+    }
+
+    @media (min-width: 1000px) {
       .grid {
-        grid-template-columns: repeat(4, 1fr);
+        grid-template-columns: repeat(2, 1fr);
       }
     }
-    
+
     .card {
-      background: rgba(255,255,255,0.15);
-      backdrop-filter: blur(10px);
-      border-radius: 15px;
-      padding: 20px;
-      box-shadow: 0 8px 32px rgba(0,0,0,0.1);
-      border: 1px solid rgba(255,255,255,0.2);
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 15px;
     }
-    
+
     .card h2 {
-      font-size: 1.3em;
-      margin-bottom: 15px;
-      padding-bottom: 10px;
-      border-bottom: 2px solid rgba(255,255,255,0.3);
+      font-size: 1.2em;
+      color: #ff0000;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #333;
+      text-shadow: 0 0 8px rgba(255, 0, 0, 0.3);
     }
-    
+
     .status-badge {
       display: inline-block;
       padding: 8px 16px;
-      border-radius: 20px;
+      border-radius: 4px;
       font-weight: bold;
       font-size: 1.1em;
-      margin: 10px 0;
+      margin: 8px 0;
+      text-shadow: 0 0 5px rgba(0, 0, 0, 0.5);
     }
-    
-    .status-idle { background: #6c757d; }
-    .status-printing { background: #28a745; animation: pulse 2s infinite; }
-    .status-paused { background: #ffc107; color: #000; }
-    .status-error { background: #dc3545; animation: flash 1s infinite; }
-    
+
+    .status-idle { background: #444; color: #fff; }
+    .status-printing { background: #ff0000; color: #fff; animation: pulse 2s infinite; }
+    .status-paused { background: #ff6600; color: #fff; }
+    .status-complete { background: #00cc00; color: #fff; }
+    .status-error { background: #ff0000; color: #fff; animation: flash 1s infinite; }
+
     @keyframes pulse {
       0%, 100% { opacity: 1; }
       50% { opacity: 0.7; }
     }
-    
+
     @keyframes flash {
       0%, 50%, 100% { opacity: 1; }
       25%, 75% { opacity: 0.5; }
     }
-    
-    .temp-display {
+
+    .info-row {
       display: flex;
       justify-content: space-between;
-      align-items: center;
-      padding: 8px 10px;
-      margin: 6px 0;
-      background: rgba(0,0,0,0.2);
-      border-radius: 8px;
+      padding: 6px 0;
+      border-bottom: 1px solid #222;
     }
 
-    .temp-label {
+    .info-row:last-child {
+      border-bottom: none;
+    }
+
+    .label {
+      color: #888;
+      font-size: 0.9em;
+    }
+
+    .value {
+      color: #e0e0e0;
+      font-weight: 500;
+    }
+
+    .temp-display {
+      font-size: 1.3em;
       font-weight: bold;
-      font-size: 0.85em;
-      opacity: 0.8;
+      color: #ff0000;
     }
 
-    .temp-value {
-      font-size: 1.4em;
-      font-weight: bold;
-    }
-
-    .temp-target {
-      font-size: 0.85em;
-      opacity: 0.7;
-    }
-    
     .progress-bar {
       width: 100%;
-      height: 30px;
-      background: rgba(0,0,0,0.3);
-      border-radius: 15px;
+      height: 25px;
+      background: #222;
+      border-radius: 4px;
       overflow: hidden;
-      margin: 15px 0;
+      margin: 10px 0;
       position: relative;
     }
-    
+
     .progress-fill {
       height: 100%;
-      background: linear-gradient(90deg, #4CAF50, #8BC34A);
+      background: linear-gradient(90deg, #ff0000 0%, #ff6600 100%);
       transition: width 0.3s ease;
       display: flex;
       align-items: center;
       justify-content: center;
+    }
+
+    .progress-text {
+      position: absolute;
+      width: 100%;
+      text-align: center;
       font-weight: bold;
-    }
-    
-    .info-row {
-      display: flex;
-      justify-content: space-between;
-      padding: 8px 0;
-      border-bottom: 1px solid rgba(255,255,255,0.1);
-    }
-    
-    .info-label {
-      opacity: 0.8;
-    }
-    
-    .info-value {
-      font-weight: bold;
-    }
-    
-    .btn {
-      padding: 12px 24px;
-      border: none;
-      border-radius: 8px;
-      font-size: 1em;
-      font-weight: bold;
-      cursor: pointer;
-      transition: all 0.3s;
-      margin: 5px;
       color: #fff;
+      line-height: 25px;
+      text-shadow: 0 0 3px #000;
     }
-    
-    .btn:hover {
+
+    button {
+      background: #ff0000;
+      color: #fff;
+      border: none;
+      padding: 10px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1.1em;
+      font-weight: 600;
+      margin: 5px;
+      transition: all 0.2s;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+    }
+
+    button:hover {
+      background: #cc0000;
       transform: translateY(-2px);
-      box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+      box-shadow: 0 4px 12px rgba(255, 0, 0, 0.4);
     }
-    
-    .btn:active {
+
+    button:active {
       transform: translateY(0);
     }
-    
-    .btn-pause { background: #ffc107; color: #000; }
-    .btn-resume { background: #28a745; }
-    .btn-cancel { background: #dc3545; }
-    .btn-light { background: #17a2b8; }
-    .btn-toggle { background: #6610f2; }
-    
-    .btn:disabled {
-      opacity: 0.5;
-      cursor: not-allowed;
+
+    button.secondary {
+      background: #2a2a2a;
     }
-    
-    .controls {
-      display: flex;
-      flex-wrap: wrap;
-      justify-content: center;
-      gap: 10px;
-      margin-top: 15px;
+
+    button.secondary:hover {
+      background: #333;
+      box-shadow: 0 4px 12px rgba(50, 50, 50, 0.3);
     }
-    
-    .sensor-settings {
-      background: rgba(255,255,255,0.1);
-      padding: 15px;
-      margin: 15px 0;
-      border-radius: 10px;
+
+    button.success {
+      background: #005500;
     }
-    
-    .delay-slider {
-      width: 100%;
-      margin: 10px 0;
+
+    button.success:hover {
+      background: #006600;
+      box-shadow: 0 4px 12px rgba(0, 100, 0, 0.4);
     }
-    
-    .delay-value {
-      font-size: 1.2em;
-      font-weight: bold;
-      color: #4CAF50;
+
+    button.light-on {
+      background: #997700;
+      color: #fff;
     }
-    
+
+    button.light-on:hover {
+      background: #aa8800;
+      box-shadow: 0 4px 12px rgba(170, 136, 0, 0.5);
+    }
+
+    button.light-off {
+      background: #333;
+      color: #fff;
+    }
+
+    button.light-off:hover {
+      background: #444;
+    }
+
     .sensor-status {
-      padding: 15px;
-      margin: 10px 0;
-      border-radius: 10px;
-      border-left: 4px solid;
-      font-size: 1.1em;
-      font-weight: bold;
+      padding: 10px;
+      background: #222;
+      border-radius: 4px;
+      margin: 8px 0;
     }
-    
+
     .sensor-ok {
-      background: rgba(40, 167, 69, 0.2);
-      border-color: #28a745;
+      border-left: 3px solid #00cc00;
     }
-    
-    .sensor-warning {
-      background: rgba(255, 193, 7, 0.2);
-      border-color: #ffc107;
-      color: #ffc107;
-    }
-    
+
     .sensor-error {
-      background: rgba(220, 53, 69, 0.2);
-      border-color: #dc3545;
+      border-left: 3px solid #ff0000;
       animation: flash 1s infinite;
     }
-    
-    .update-time {
-      text-align: center;
-      opacity: 0.6;
-      font-size: 0.9em;
-      margin-top: 20px;
+
+    .camera-container {
+      width: 100%;
+      aspect-ratio: 16/9;
+      background: #000;
+      border-radius: 8px;
+      overflow: hidden;
+      position: relative;
     }
-    
+
+    .camera-container img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .camera-offline {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      width: 100%;
+      height: 100%;
+      color: #666;
+    }
+
+    input[type="text"],
+    input[type="number"],
+    input[type="file"] {
+      width: 100%;
+      padding: 8px;
+      background: #222;
+      border: 1px solid #444;
+      border-radius: 4px;
+      color: #e0e0e0;
+      font-size: 0.95em;
+      margin: 5px 0;
+    }
+
+    input[type="checkbox"] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+    }
+
+    label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin: 8px 0;
+      cursor: pointer;
+    }
+
+    .settings-section {
+      background: #1a1a1a;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 15px;
+      margin-bottom: 15px;
+    }
+
+    .settings-section h3 {
+      color: #ff0000;
+      font-size: 1em;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #333;
+    }
+
+    .alert {
+      padding: 12px;
+      border-radius: 4px;
+      margin: 10px 0;
+      font-size: 0.95em;
+    }
+
+    .alert-success {
+      background: #1a4d1a;
+      border: 1px solid #00cc00;
+      color: #00ff00;
+    }
+
+    .alert-error {
+      background: #4d1a1a;
+      border: 1px solid #ff0000;
+      color: #ff6666;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    #settingsBtn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+      background: #333;
+      padding: 12px 20px;
+      font-size: 1em;
+    }
+
+    #settingsBtn:hover {
+      background: #444;
+    }
+
+    .modal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.9);
+      z-index: 2000;
+      overflow-y: auto;
+      padding: 20px;
+    }
+
+    .modal-content {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+
+    .modal-header h2 {
+      color: #ff0000;
+      font-size: 1.5em;
+    }
+
+    .close-btn {
+      background: #444;
+      padding: 8px 16px;
+      font-size: 1.1em;
+    }
+
     @media (max-width: 768px) {
-      h1 { font-size: 1.8em; }
-      .grid { grid-template-columns: 1fr; }
-      .btn { width: 100%; margin: 5px 0; }
+      .grid {
+        grid-template-columns: 1fr;
+      }
+
+      h1 {
+        font-size: 1.4em;
+      }
+
+      #settingsBtn {
+        top: 10px;
+        right: 10px;
+        padding: 8px 16px;
+        font-size: 0.9em;
+      }
     }
   </style>
 </head>
 <body>
+  <button id="settingsBtn" onclick="openSettings()">⚙️ Settings</button>
+
   <div class="container">
     <header>
       <h1>🖨️ Centauri Carbon Monitor</h1>
-      <p class="subtitle">Echtzeit-Überwachung & Steuerung</p>
+      <div class="subtitle">Filament-Sensor & Status-Überwachung</div>
     </header>
 
-    <div style="margin-bottom: 20px; text-align: center;">
-      <button class="btn btn-light" onclick="window.location.href='/settings'" style="width: 100%; max-width: 400px;">
-        ⚙️ Einstellungen & OTA Update
-      </button>
-    </div>
-
+    <!-- 3-Spalten Grid (2 Spalten: Temps+Status, Sensor+Controls, Kamera über 2 Spalten unten) -->
     <div class="grid">
-      <!-- Status Card -->
+      <!-- Spalte 1: Temperaturen + Fortschritt + Status -->
       <div class="card">
-        <h2>📊 Status</h2>
-        <div class="status-badge" id="statusBadge">Lädt...</div>
+        <h2>🌡️ Temps & Fortschritt</h2>
+        <div id="statusBadge" class="status-badge status-idle" style="margin-bottom: 12px;">IDLE</div>
         <div class="info-row">
-          <span class="info-label">Position:</span>
-          <span class="info-value" id="position">-</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">Z-Offset:</span>
-          <span class="info-value" id="zOffset">-</span>
+          <span class="label">Bett</span>
+          <span id="bedTemp" class="temp-display">-°C</span>
         </div>
         <div class="info-row">
-          <span class="info-label">Licht:</span>
-          <span class="info-value" id="light">-</span>
+          <span class="label">Düse</span>
+          <span id="nozzleTemp" class="temp-display">-°C</span>
         </div>
-      </div>
-      
-      <!-- Temperature Card -->
-      <div class="card">
-        <h2>🌡️ Temperaturen</h2>
-        <div class="temp-display">
-          <div>
-            <div class="temp-label">🛏️ BETT</div>
-            <div class="temp-value" id="bedTemp">-</div>
-            <div class="temp-target" id="bedTarget">Ziel: -</div>
-          </div>
+        <div class="info-row">
+          <span class="label">Kammer</span>
+          <span id="chamberTemp" class="value">-°C</span>
         </div>
-        <div class="temp-display">
-          <div>
-            <div class="temp-label">🔥 DÜSE</div>
-            <div class="temp-value" id="nozzleTemp">-</div>
-            <div class="temp-target" id="nozzleTarget">Ziel: -</div>
-          </div>
-        </div>
-        <div class="temp-display">
-          <div>
-            <div class="temp-label">📦 KAMMER</div>
-            <div class="temp-value" id="chamberTemp">-</div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Print Progress Card -->
-      <div class="card">
-        <h2>📈 Druckfortschritt</h2>
         <div class="progress-bar">
-          <div class="progress-fill" id="progressBar" style="width: 0%">0%</div>
+          <div id="progressBar" class="progress-fill" style="width: 0%"></div>
+          <div id="progressText" class="progress-text">0%</div>
         </div>
         <div class="info-row">
-          <span class="info-label">Datei:</span>
-          <span class="info-value" id="filename">-</span>
+          <span class="label">Datei</span>
+          <span id="filename" class="value">-</span>
         </div>
         <div class="info-row">
-          <span class="info-label">Layer:</span>
-          <span class="info-value" id="layers">-</span>
+          <span class="label">Schicht</span>
+          <span id="layer" class="value">-</span>
         </div>
         <div class="info-row">
-          <span class="info-label">Geschwindigkeit:</span>
-          <span class="info-value" id="speed">-</span>
+          <span class="label">Speed</span>
+          <span id="speed" class="value">-</span>
         </div>
       </div>
-      
-      <!-- Filament Sensor Card -->
+
+      <!-- Spalte 2: Filament-Sensor + Steuerung -->
       <div class="card">
-        <h2>🎞️ Filament Sensor</h2>
+        <h2>🎞️ Sensor & Steuerung</h2>
         <div id="sensorStatus" class="sensor-status sensor-ok">
-          ✅ Filament OK
+          <div class="info-row">
+            <span class="label">Status</span>
+            <span id="sensorError" class="value">OK</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Filament</span>
+            <span id="filamentPresent" class="value">-</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Auto-Pause</span>
+            <span id="autoPause" class="value">-</span>
+          </div>
         </div>
-        <div class="info-row">
-          <span class="info-label">Letzte Bewegung:</span>
-          <span class="info-value" id="lastMotion">-</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">Impulse:</span>
-          <span class="info-value" id="pulseCount">-</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">Auto-Pause:</span>
-          <span class="info-value" id="autoPause">-</span>
-        </div>
-      </div>
-      
-      <!-- Fans Card -->
-      <div class="card">
-        <h2>💨 Lüfter</h2>
-        <div class="info-row">
-          <span class="info-label">Modell:</span>
-          <span class="info-value" id="fanModel">-</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">Auxiliary:</span>
-          <span class="info-value" id="fanAux">-</span>
-        </div>
-        <div class="info-row">
-          <span class="info-label">Box:</span>
-          <span class="info-value" id="fanBox">-</span>
+        <div style="border-top: 1px solid #333; margin: 12px 0 8px 0; padding-top: 12px; font-size: 0;">
+          <button onclick="clearError()" class="secondary" style="width: 49%; margin: 0; font-size: 1rem; display: inline-block; background: #2a2a2a; padding: 8px 24px;"><span style="font-size: 1.8em;">🔄</span></button><!--
+          --><span style="display: inline-block; width: 2%;"></span><!--
+          --><button id="lightBtn" onclick="toggleLight()" class="light-off" style="width: 49%; margin: 0; font-size: 1rem; display: inline-block; padding: 8px 24px;"><span style="font-size: 1.8em;">💡</span></button>
+          <div style="margin-top: 18px;"></div>
+          <button onclick="pausePrint()" style="width: 32%; margin: 0; font-size: 1rem; display: inline-block; background: #660000; padding: 8px 24px;"><span style="font-size: 1.8em;">⏸️</span></button><!--
+          --><span style="display: inline-block; width: 2%;"></span><!--
+          --><button onclick="resumePrint()" class="success" style="width: 32%; margin: 0; font-size: 1rem; display: inline-block; background: #005500; padding: 8px 24px;"><span style="font-size: 1.8em;">▶️</span></button><!--
+          --><span style="display: inline-block; width: 2%;"></span><!--
+          --><button onclick="cancelPrint()" style="background: #660000; width: 32%; margin: 0; font-size: 1rem; display: inline-block; padding: 8px 24px;"><span style="font-size: 1.8em;">⏹️</span></button>
         </div>
       </div>
-      
-      <!-- Control Card -->
-      <div class="card">
-        <h2>🎮 Steuerung</h2>
-        <div class="controls">
-          <button class="btn btn-pause" onclick="sendControl('pause')">⏸️ Pause</button>
-          <button class="btn btn-resume" onclick="sendControl('resume')">▶️ Resume</button>
-          <button class="btn btn-cancel" onclick="confirmCancel()">⏹️ Abbrechen</button>
-          <button class="btn btn-light" onclick="sendControl('toggleLight')">💡 Licht</button>
+
+      <!-- Kamera über 2 Spalten -->
+      <div class="card" style="grid-column: span 2;">
+        <h2 style="display: flex; justify-content: space-between; align-items: center;">
+          <span>📷 Live-Kamera</span>
+          <button onclick="refreshCamera()" class="secondary" style="padding: 6px 12px; font-size: 0.9em; margin: 0;">🔄 Refresh</button>
+        </h2>
+        <div class="camera-container">
+          <img id="cameraStream" src="" style="display: none;" onload="this.style.display='block'; document.getElementById('cameraOffline').style.display='none';" onerror="this.style.display='none'; document.getElementById('cameraOffline').style.display='flex';">
+          <div id="cameraOffline" class="camera-offline" style="display: flex;">
+            Kamera offline oder nicht konfiguriert
+          </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings Modal -->
+  <div id="settingsModal" class="modal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>⚙️ Einstellungen</h2>
+        <button class="close-btn" onclick="closeSettings()">✕ Schließen</button>
       </div>
 
       <!-- Filament Sensor Settings -->
-      <div class="card">
-        <h2>⚙️ Filament-Sensor</h2>
-        <div class="controls">
-          <button class="btn btn-toggle" onclick="toggleAutoPause()" id="autoPauseBtn">
-            Auto-Pause: EIN
-          </button>
-          <button class="btn btn-toggle" onclick="toggleSwitchMode()" id="switchModeBtn">
-            Mode: Direct
-          </button>
-          <button class="btn btn-resume" onclick="clearError()" id="clearErrorBtn">
-            Fehler zurücksetzen
-          </button>
-        </div>
+      <div class="settings-section">
+        <h3>🎞️ Filament-Sensor</h3>
+        <label>
+          <input type="checkbox" id="autoPauseToggle" onchange="toggleAutoPause()">
+          Auto-Pause aktivieren
+        </label>
+        <label>
+          <input type="checkbox" id="switchModeToggle" onchange="toggleSwitchMode()">
+          Direct Mode (Hardware-Pin)
+        </label>
+        <label>
+          <span class="label">Verzögerung vor Pause (ms)</span>
+          <input type="number" id="pauseDelay" min="1000" max="10000" step="500">
+        </label>
+        <button onclick="savePauseDelay()">💾 Verzögerung speichern</button>
+      </div>
 
-        <div style="margin-top: 15px;">
-          <label>Verzögerung vor Pause: <span id="delayValue" class="delay-value">2000ms</span></label>
-          <input type="range" min="500" max="10000" value="2000" step="100"
-                 class="delay-slider" id="pauseDelay"
-                 oninput="updateDelayValue(this.value)"
-                 onchange="setPauseDelay(this.value)">
+      <!-- WhatsApp Notifications -->
+      <div class="settings-section">
+        <h3>📱 WhatsApp-Benachrichtigungen (CallMeBot)</h3>
+        <label>
+          <input type="checkbox" id="notifyEnabled" onchange="toggleNotifications()">
+          Benachrichtigungen aktivieren
+        </label>
+        <label>
+          <span class="label">Telefonnummer (mit Ländercode, z.B. 491701234567)</span>
+          <input type="text" id="notifyPhone" placeholder="491701234567">
+        </label>
+        <label>
+          <span class="label">CallMeBot API Key</span>
+          <input type="text" id="notifyApiKey" placeholder="API Key">
+        </label>
+        <button onclick="saveCallMeBotSettings()">💾 Speichern</button>
+        <button onclick="testNotification()" class="success">📤 Test-Nachricht senden</button>
+        <div id="notifyMessage" class="alert hidden"></div>
+      </div>
+
+      <!-- WiFi Configuration -->
+      <div class="settings-section">
+        <h3>📡 WiFi-Konfiguration</h3>
+        <label>
+          <span class="label">SSID (Router-Name)</span>
+          <input type="text" id="wifiSSIDInput" placeholder="Mein-Router">
+        </label>
+        <label>
+          <span class="label">WiFi-Passwort</span>
+          <input type="password" id="wifiPasswordInput" placeholder="********">
+        </label>
+        <button onclick="saveWiFiConfig()">💾 Speichern & Neu starten</button>
+        <div id="wifiConfigMessage" class="alert hidden"></div>
+      </div>
+
+      <!-- Printer Configuration -->
+      <div class="settings-section">
+        <h3>🖨️ Drucker-Konfiguration</h3>
+        <label>
+          <span class="label">Drucker IP-Adresse</span>
+          <input type="text" id="printerIPInput" placeholder="192.168.1.67">
+        </label>
+        <label>
+          <span class="label">Drucker Port</span>
+          <input type="number" id="printerPortInput" value="80" min="1" max="65535">
+        </label>
+        <button onclick="savePrinterConfig()">💾 Speichern & Neu starten</button>
+        <div id="printerConfigMessage" class="alert hidden"></div>
+      </div>
+
+      <!-- OTA Update - GANZ UNTEN -->
+      <div class="settings-section">
+        <h3>📦 OTA Firmware Update</h3>
+        <p style="color: #888; margin-bottom: 10px; font-size: 0.9em;">
+          Wähle eine .bin Datei aus und klicke auf Upload. Der ESP32 startet nach erfolgreichem Update automatisch neu.
+        </p>
+        <input type="file" id="firmwareFile" accept=".bin">
+        <button onclick="uploadFirmware()" style="background: #ff6600;">📤 Firmware hochladen</button>
+        <div id="uploadProgress" class="progress-bar hidden">
+          <div id="uploadBar" class="progress-fill" style="width: 0%"></div>
+          <div id="uploadText" class="progress-text">0%</div>
         </div>
+        <div id="uploadMessage" class="alert hidden"></div>
       </div>
     </div>
-
-    <!-- Camera Stream Section -->
-    <div class="sensor-settings" style="margin-top: 20px;">
-      <h3>📷 Drucker-Kamera</h3>
-      <div style="border-radius: 10px; overflow: hidden; background: rgba(0,0,0,0.3);">
-        <img id="cameraStream" src="" alt="Kamera lädt..."
-             style="width: 100%; height: auto; display: block;"
-             onerror="this.alt='Kamera nicht erreichbar'">
-      </div>
-      <div style="margin-top: 10px; text-align: center;">
-        <button class="btn btn-resume" onclick="reloadCamera()">
-          🔄 Kamera neu laden
-        </button>
-      </div>
-    </div>
-
-    <div class="update-time" id="updateTime">Warte auf Daten...</div>
   </div>
 
   <script>
-    let updateInterval;
-    
-    async function fetchStatus() {
-      try {
-        const response = await fetch('/api/status');
-        const data = await response.json();
-        updateUI(data);
-        document.getElementById('updateTime').textContent = 
-          'Letzte Aktualisierung: ' + new Date().toLocaleTimeString('de-DE');
-      } catch (error) {
-        console.error('Fehler beim Abrufen:', error);
-      }
-    }
-    
-    // Filament sensor controls
-    async function toggleAutoPause() {
-      await sendControl('toggleAutoPause');
-    }
-    
-    async function clearError() {
-      await sendControl('clearError');
-    }
+    let printerIP = window.location.hostname;
 
-    async function toggleSwitchMode() {
-      await sendControl('toggleSwitchMode');
-    }
-
-    function updateDelayValue(value) {
-      document.getElementById('delayValue').textContent = value + 'ms';
-    }
-    
-    let delayTimeout;
-    function setPauseDelay(value) {
-      clearTimeout(delayTimeout);
-      delayTimeout = setTimeout(() => {
-        sendControl('setPauseDelay', { delay: parseInt(value) });
-      }, 500);
-    }
-    
     function updateUI(data) {
       // Status
       const statusText = data.status.stateText;
@@ -472,189 +585,101 @@ const char* getDashboardHTML() {
       const badge = document.getElementById('statusBadge');
       badge.textContent = statusText + ' (' + statusCode + ')';
       badge.className = 'status-badge';
-      
-      if (data.status.state === 11) {  // PRINTING
+
+      if (statusText.includes('PRINTING')) {
         badge.className += ' status-printing';
-      } else if (data.status.state === 6) {  // PAUSED
+      } else if (statusText.includes('PAUSED')) {
         badge.className += ' status-paused';
+      } else if (statusText.includes('COMPLETE')) {
+        badge.className += ' status-complete';
       } else {
         badge.className += ' status-idle';
       }
-      
-      // Position und Z-Offset
-      document.getElementById('position').textContent = data.status.position || '-';
-      document.getElementById('zOffset').textContent = 
-        data.status.zOffset ? data.status.zOffset.toFixed(2) + ' mm' : '-';
-      
-      document.getElementById('light').textContent = data.status.lightOn ? '💡 AN' : '⚫ AUS';
-      
-      // Filament Sensor Status - VERBESSERT
-      const sensorStatusDiv = document.getElementById('sensorStatus');
-      const autoPauseBtn = document.getElementById('autoPauseBtn');
-      const switchModeBtn = document.getElementById('switchModeBtn');
-      const clearErrorBtn = document.getElementById('clearErrorBtn');
 
-      // Auto-Pause Button Update
-      autoPauseBtn.textContent = 'Auto-Pause: ' + (data.sensor.autoPause ? 'EIN' : 'AUS');
-
-      // Switch Mode Button Update
-      switchModeBtn.textContent = 'Mode: ' + (data.sensor.switchDirectMode ? 'Direct' : 'Pause');
-
-      // Pause delay slider update
-      const delaySlider = document.getElementById('pauseDelay');
-      if (delaySlider.value != data.sensor.pauseDelay) {
-        delaySlider.value = data.sensor.pauseDelay;
-        updateDelayValue(data.sensor.pauseDelay);
-      }
-      
-      // Sensor Status Display - KORRIGIERT
-      if (data.sensor.noFilament) {
-        sensorStatusDiv.textContent = '⚠️ Kein Filament erkannt';
-        sensorStatusDiv.className = 'sensor-status sensor-error';
-        clearErrorBtn.disabled = false;
-      } else if (data.sensor.error) {
-        sensorStatusDiv.textContent = '⚠️ Filament-Stau erkannt';
-        sensorStatusDiv.className = 'sensor-status sensor-error';
-        clearErrorBtn.disabled = false;
+      // Licht-Button Farbe ändern
+      const lightBtn = document.getElementById('lightBtn');
+      if (data.status.lightOn) {
+        lightBtn.className = 'light-on';
       } else {
-        sensorStatusDiv.textContent = '✅ Filament OK';
-        sensorStatusDiv.className = 'sensor-status sensor-ok';
-        clearErrorBtn.disabled = true;
+        lightBtn.className = 'light-off';
       }
-      
-      // Sensor Info Rows
-      document.getElementById('lastMotion').textContent =
-        Math.floor(data.sensor.lastMotion / 1000) + ' s';
-      document.getElementById('pulseCount').textContent = data.sensor.pulseCount;
-      document.getElementById('autoPause').textContent =
-        data.sensor.autoPause ? '✅ Aktiv' : '❌ Inaktiv';
 
-      // Temperatures
-      document.getElementById('bedTemp').textContent = data.status.bedTemp.toFixed(1) + '°C';
-      document.getElementById('bedTarget').textContent = 'Ziel: ' + data.status.bedTarget.toFixed(1) + '°C';
-      document.getElementById('nozzleTemp').textContent = data.status.nozzleTemp.toFixed(1) + '°C';
-      document.getElementById('nozzleTarget').textContent = 'Ziel: ' + data.status.nozzleTarget.toFixed(1) + '°C';
+      // Temperaturen
+      document.getElementById('bedTemp').textContent =
+        data.status.bedTemp.toFixed(1) + '°C / ' + data.status.bedTarget.toFixed(1) + '°C';
+      document.getElementById('nozzleTemp').textContent =
+        data.status.nozzleTemp.toFixed(1) + '°C / ' + data.status.nozzleTarget.toFixed(1) + '°C';
       document.getElementById('chamberTemp').textContent = data.status.chamberTemp.toFixed(1) + '°C';
-      
-      // Print Progress
-      const progress = data.print.progress;
+
+      // Fortschritt
+      const progress = data.print.progress || 0;
       document.getElementById('progressBar').style.width = progress + '%';
-      document.getElementById('progressBar').textContent = progress + '%';
+      document.getElementById('progressText').textContent = progress + '%';
       document.getElementById('filename').textContent = data.print.filename || '-';
-      document.getElementById('layers').textContent = 
+      document.getElementById('layer').textContent =
         data.print.layer + ' / ' + data.print.totalLayers;
       document.getElementById('speed').textContent = data.print.speed + '%';
-      
-      // Fans
-      document.getElementById('fanModel').textContent = data.fans.model + '%';
-      document.getElementById('fanAux').textContent = data.fans.aux + '%';
-      document.getElementById('fanBox').textContent = data.fans.box + '%';
+
+      // Filament Sensor
+      const sensorDiv = document.getElementById('sensorStatus');
+      if (data.sensor.error) {
+        sensorDiv.className = 'sensor-status sensor-error';
+        document.getElementById('sensorError').textContent = '⚠️ FEHLER!';
+      } else {
+        sensorDiv.className = 'sensor-status sensor-ok';
+        document.getElementById('sensorError').textContent = '✓ OK';
+      }
+
+      document.getElementById('filamentPresent').textContent =
+        data.sensor.noFilament ? '❌ FEHLT' : '✓ Vorhanden';
+      document.getElementById('autoPause').textContent =
+        data.sensor.autoPause ? '✓ Aktiv' : '⚫ Aus';
+
+      // Settings - only update if settings modal is closed (to avoid overwriting user input)
+      const settingsModal = document.getElementById('settingsModal');
+      if (settingsModal.style.display !== 'block') {
+        document.getElementById('autoPauseToggle').checked = data.sensor.autoPause;
+        document.getElementById('switchModeToggle').checked = data.sensor.switchDirectMode;
+        document.getElementById('pauseDelay').value = data.sensor.pauseDelay;
+        document.getElementById('notifyEnabled').checked = data.notify.enabled;
+        document.getElementById('notifyPhone').value = data.notify.phone;
+        document.getElementById('wifiSSIDInput').value = data.wifiSSID || '';
+        document.getElementById('wifiPasswordInput').value = '';  // Password bleibt leer aus Sicherheitsgründen
+        document.getElementById('printerIPInput').value = data.printerIP || '';
+        document.getElementById('printerPortInput').value = data.printerPort || 80;
+      }
+
+      // Note: Camera is loaded separately via loadCameraURL() function
     }
 
-    async function checkOTAStatus() {
-      try {
-        const response = await fetch('/api/ota/status');
-        const data = await response.json();
-
-        document.getElementById('currentPartition').textContent = data.currentPartition;
-        document.getElementById('nextPartition').textContent = data.nextPartition;
-
-        alert('OTA Status:\nAktuell: ' + data.currentPartition +
-              '\nNächste: ' + data.nextPartition +
-              '\nFortschritt: ' + data.progress + '%' +
-              (data.error ? '\nFehler: ' + data.error : ''));
-      } catch (error) {
-        console.error('OTA Status Fehler:', error);
-        alert('Fehler beim Abrufen des OTA Status');
-      }
+    function fetchStatus() {
+      fetch('/api/status')
+        .then(r => r.json())
+        .then(updateUI)
+        .catch(e => console.error('Status fetch error:', e));
     }
 
-    async function uploadFirmware() {
-      const fileInput = document.getElementById('firmwareFile');
-      const file = fileInput.files[0];
-
-      if (!file) {
-        return;
-      }
-
-      if (!file.name.endsWith('.bin')) {
-        alert('Bitte nur .bin Dateien auswählen!');
-        return;
-      }
-
-      if (!confirm('Firmware "' + file.name + '" hochladen?\n\nDer ESP32 wird nach erfolgreichem Upload neu gestartet.')) {
-        fileInput.value = '';
-        return;
-      }
-
-      const formData = new FormData();
-      formData.append('firmware', file);
-
-      const progressDiv = document.getElementById('otaProgress');
-      const progressBar = document.getElementById('otaProgressBar');
-      const statusDiv = document.getElementById('otaStatus');
-
-      progressDiv.style.display = 'block';
-      progressBar.style.width = '0%';
-      progressBar.textContent = '0%';
-      statusDiv.textContent = 'Upload läuft...';
-
-      try {
-        const xhr = new XMLHttpRequest();
-
-        xhr.upload.addEventListener('progress', (e) => {
-          if (e.lengthComputable) {
-            const percentComplete = Math.round((e.loaded / e.total) * 100);
-            progressBar.style.width = percentComplete + '%';
-            progressBar.textContent = percentComplete + '%';
-          }
-        });
-
-        xhr.addEventListener('load', () => {
-          if (xhr.status === 200) {
-            const response = JSON.parse(xhr.responseText);
-            progressBar.style.width = '100%';
-            progressBar.textContent = '100%';
-            statusDiv.textContent = response.message || 'Upload erfolgreich! Neustart...';
-            progressBar.style.background = '#4CAF50';
-
-            setTimeout(() => {
-              alert('Firmware erfolgreich aktualisiert!\n\nDer ESP32 startet jetzt neu.\nBitte warten Sie ca. 10 Sekunden und laden Sie die Seite neu.');
-            }, 1000);
-          } else {
-            const response = JSON.parse(xhr.responseText);
-            statusDiv.textContent = 'Fehler: ' + (response.message || 'Upload fehlgeschlagen');
-            progressBar.style.background = '#dc3545';
-            alert('Upload fehlgeschlagen: ' + (response.message || 'Unbekannter Fehler'));
-          }
-          fileInput.value = '';
-        });
-
-        xhr.addEventListener('error', () => {
-          statusDiv.textContent = 'Upload fehlgeschlagen';
-          progressBar.style.background = '#dc3545';
-          alert('Upload fehlgeschlagen: Netzwerkfehler');
-          fileInput.value = '';
-        });
-
-        xhr.open('POST', '/api/ota/upload');
-        xhr.send(formData);
-
-      } catch (error) {
-        console.error('Upload Fehler:', error);
-        statusDiv.textContent = 'Fehler: ' + error.message;
-        progressBar.style.background = '#dc3545';
-        alert('Upload fehlgeschlagen: ' + error.message);
-        fileInput.value = '';
-      }
+    function sendCommand(action, data = {}) {
+      fetch('/api/control', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({action, ...data})
+      }).then(() => fetchStatus());
     }
 
+    function pausePrint() { sendCommand('pause'); }
+    function resumePrint() { sendCommand('resume'); }
+    function cancelPrint() { if(confirm('Druck wirklich abbrechen?')) sendCommand('cancel'); }
+    function toggleLight() { sendCommand('toggleLight'); }
+    function clearError() { sendCommand('clearError'); }
+    function toggleAutoPause() { sendCommand('toggleAutoPause'); }
+    function toggleSwitchMode() { sendCommand('toggleSwitchMode'); }
+
+    // Camera functions
     async function loadCameraURL() {
       try {
         const response = await fetch('/api/config');
         const data = await response.json();
-
-        // Update camera URL based on printer IP
         if (data.printerIP) {
           const cameraURL = 'http://' + data.printerIP + ':3031/video';
           document.getElementById('cameraStream').src = cameraURL;
@@ -673,37 +698,195 @@ const char* getDashboardHTML() {
       }, 100);
     }
 
-    async function sendControl(action, data = {}) {
-      try {
-        const response = await fetch('/api/control', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: action, ...data })
-        });
-        const result = await response.json();
-        if (result.success) {
-          console.log(result.message);
-          setTimeout(fetchStatus, 500);
+    function savePauseDelay() {
+      const delay = document.getElementById('pauseDelay').value;
+      sendCommand('setPauseDelay', {delay: parseInt(delay)});
+    }
+
+    function toggleNotifications() {
+      const enabled = document.getElementById('notifyEnabled').checked;
+      sendCommand('setCallMeBotSettings', {
+        enabled,
+        phone: document.getElementById('notifyPhone').value,
+        apiKey: document.getElementById('notifyApiKey').value
+      });
+    }
+
+    function saveCallMeBotSettings() {
+      const msg = document.getElementById('notifyMessage');
+      sendCommand('setCallMeBotSettings', {
+        enabled: document.getElementById('notifyEnabled').checked,
+        phone: document.getElementById('notifyPhone').value,
+        apiKey: document.getElementById('notifyApiKey').value
+      });
+      msg.className = 'alert alert-success';
+      msg.textContent = '✓ Einstellungen gespeichert';
+      msg.classList.remove('hidden');
+      setTimeout(() => msg.classList.add('hidden'), 3000);
+    }
+
+    function saveWiFiConfig() {
+      const msg = document.getElementById('wifiConfigMessage');
+      const wifiSSID = document.getElementById('wifiSSIDInput').value;
+      const wifiPassword = document.getElementById('wifiPasswordInput').value;
+
+      if (!wifiSSID) {
+        msg.className = 'alert alert-error';
+        msg.textContent = '❌ Bitte SSID eingeben';
+        msg.classList.remove('hidden');
+        setTimeout(() => msg.classList.add('hidden'), 3000);
+        return;
+      }
+
+      if (!wifiPassword) {
+        msg.className = 'alert alert-error';
+        msg.textContent = '❌ Bitte WiFi-Passwort eingeben';
+        msg.classList.remove('hidden');
+        setTimeout(() => msg.classList.add('hidden'), 3000);
+        return;
+      }
+
+      fetch('/api/settings', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({wifiSSID, wifiPassword})
+      })
+      .then(r => r.json())
+      .then(data => {
+        msg.className = 'alert alert-success';
+        msg.textContent = '✓ Gespeichert. ESP32 startet neu...';
+        msg.classList.remove('hidden');
+        setTimeout(() => {
+          location.reload();
+        }, 3000);
+      })
+      .catch(e => {
+        msg.className = 'alert alert-error';
+        msg.textContent = '❌ Fehler beim Speichern';
+        msg.classList.remove('hidden');
+        setTimeout(() => msg.classList.add('hidden'), 3000);
+      });
+    }
+
+    function savePrinterConfig() {
+      const msg = document.getElementById('printerConfigMessage');
+      const printerIP = document.getElementById('printerIPInput').value;
+      const printerPort = parseInt(document.getElementById('printerPortInput').value);
+
+      if (!printerIP) {
+        msg.className = 'alert alert-error';
+        msg.textContent = '❌ Bitte Drucker-IP eingeben';
+        msg.classList.remove('hidden');
+        setTimeout(() => msg.classList.add('hidden'), 3000);
+        return;
+      }
+
+      fetch('/api/settings', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({printerIP, printerPort})
+      })
+      .then(r => r.json())
+      .then(data => {
+        msg.className = 'alert alert-success';
+        msg.textContent = '✓ Gespeichert. ESP32 startet neu...';
+        msg.classList.remove('hidden');
+        setTimeout(() => {
+          location.reload();
+        }, 3000);
+      })
+      .catch(e => {
+        msg.className = 'alert alert-error';
+        msg.textContent = '❌ Fehler beim Speichern';
+        msg.classList.remove('hidden');
+        setTimeout(() => msg.classList.add('hidden'), 3000);
+      });
+    }
+
+    function testNotification() {
+      const msg = document.getElementById('notifyMessage');
+      sendCommand('testNotification');
+      msg.className = 'alert alert-success';
+      msg.textContent = '📤 Test-Nachricht wird gesendet...';
+      msg.classList.remove('hidden');
+      setTimeout(() => msg.classList.add('hidden'), 5000);
+    }
+
+    function uploadFirmware() {
+      const file = document.getElementById('firmwareFile').files[0];
+      if (!file) {
+        alert('Bitte wähle eine Firmware-Datei aus');
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append('firmware', file);
+
+      const progressDiv = document.getElementById('uploadProgress');
+      const progressBar = document.getElementById('uploadBar');
+      const progressText = document.getElementById('uploadText');
+      const msg = document.getElementById('uploadMessage');
+
+      progressDiv.classList.remove('hidden');
+      msg.classList.add('hidden');
+
+      const xhr = new XMLHttpRequest();
+
+      xhr.upload.addEventListener('progress', (e) => {
+        if (e.lengthComputable) {
+          const percent = Math.round((e.loaded / e.total) * 100);
+          progressBar.style.width = percent + '%';
+          progressText.textContent = percent + '%';
         }
-      } catch (error) {
-        console.error('Fehler:', error);
-      }
+      });
+
+      xhr.addEventListener('load', () => {
+        if (xhr.status === 200) {
+          msg.className = 'alert alert-success';
+          msg.textContent = '✓ Upload erfolgreich! ESP32 startet neu...';
+          msg.classList.remove('hidden');
+          setTimeout(() => location.reload(), 10000);
+        } else {
+          msg.className = 'alert alert-error';
+          msg.textContent = '❌ Upload fehlgeschlagen: ' + xhr.statusText;
+          msg.classList.remove('hidden');
+        }
+        progressDiv.classList.add('hidden');
+      });
+
+      xhr.addEventListener('error', () => {
+        msg.className = 'alert alert-error';
+        msg.textContent = '❌ Upload fehlgeschlagen';
+        msg.classList.remove('hidden');
+        progressDiv.classList.add('hidden');
+      });
+
+      xhr.open('POST', '/api/ota/upload');
+      xhr.send(formData);
     }
-    
-    function confirmCancel() {
-      if (confirm('Druck wirklich abbrechen?')) {
-        sendControl('cancel');
-      }
+
+    function openSettings() {
+      document.getElementById('settingsModal').style.display = 'block';
     }
-    
-    // Start updates
+
+    function closeSettings() {
+      document.getElementById('settingsModal').style.display = 'none';
+    }
+
+    function refreshCamera() {
+      reloadCamera();
+    }
+
+    // Initial fetch und Update alle 500ms
     fetchStatus();
-    loadCameraURL();  // Load camera URL from config
-    updateInterval = setInterval(fetchStatus, 500);
+    setInterval(fetchStatus, 500);
+
+    // Load camera stream
+    loadCameraURL();
   </script>
 </body>
 </html>
-  )rawliteral";
+)rawliteral";
 }
 
 #endif
